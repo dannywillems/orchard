@@ -94,7 +94,7 @@ impl<I: Iterator<Item = bool>> Iterator for Pad<I> {
 #[derive(Debug, Clone)]
 #[allow(non_snake_case)]
 pub struct HashDomain {
-    Q: pallas::Point,
+    pub Q: pallas::Point,
 }
 
 impl HashDomain {
@@ -276,5 +276,20 @@ mod tests {
                 bitstring
             );
         }
+    }
+
+    #[test]
+    fn test_vectors() {
+        use crate::primitives::sinsemilla::HashDomain;
+        use group::GroupEncoding;
+
+        let mut rng = OsRng;
+        let hasher = HashDomain::new("hasher");
+        println!("Initial value: {:?}", hex::encode(hasher.Q.to_bytes()));
+        let bits: Vec<bool> = (0..1086).map(|_| rng.gen()).collect();
+        println!(
+            "Result: {:?}",
+            hasher.hash(bits[..512].iter().cloned()).unwrap()
+        );
     }
 }
