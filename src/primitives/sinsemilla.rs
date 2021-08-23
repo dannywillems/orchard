@@ -198,6 +198,8 @@ impl CommitDomain {
 
 #[cfg(test)]
 mod tests {
+    use crate::primitives::sinsemilla::SINSEMILLA_S;
+
     use super::{i2lebsp_k, lebs2ip_k, Pad, K};
     use rand::{self, rngs::OsRng, Rng};
 
@@ -241,6 +243,16 @@ mod tests {
 
     #[test]
     fn lebs2ip_k_round_trip() {
+        use pasta_curves::arithmetic::FieldExt;
+        println!("let generators_zcash_coordinates = [");
+        for (x, y) in SINSEMILLA_S.iter() {
+            println!(
+                "  (Hex.to_bytes (`Hex {:?}), Hex.to_bytes (`Hex {:?}));",
+                hex::encode(x.to_bytes()),
+                hex::encode(y.to_bytes())
+            );
+        }
+        println!("]");
         let mut rng = OsRng;
         {
             let int = rng.gen_range(0..(1 << K));
