@@ -18,6 +18,49 @@ verification entry point. After this chapter the reader can
 predict in what order each randomiser is sampled and at which
 typestate each signature is attached.
 
+### 1.1 Relation to the Bitcoin UTXO model
+
+An Orchard bundle maps onto the structure of a Bitcoin
+transaction, which is a useful starting analogy if you already
+know Bitcoin:
+
+- An Orchard **note** is the shielded analogue of a Bitcoin
+  **UTXO**: a discrete amount, created once and later consumed in
+  full. There is no partial spend; change is returned as a new
+  output note, exactly as in Bitcoin.
+- An **Action** has no single Bitcoin counterpart, because it
+  fuses one input and one output into one description. Its
+  **spend half** plays the role of a transaction **input** (it
+  consumes an existing note); its **output half** plays the role
+  of a transaction **output** (it creates a new note for a
+  recipient). See [Chapter 5](./05-action-circuit.md) for why the
+  two halves share a single circuit.
+- A bundle of $N$ Actions therefore corresponds to up to $N$
+  inputs and $N$ outputs at once; the unused half of an Action is
+  filled with a value-zero **dummy** (Definition 2.4).
+- The bundle's Actions plus its `value_balance` mirror a
+  transaction's `vin`, `vout`, and fee.
+
+The analogy stops at privacy. The table contrasts the two models
+on the points that differ:
+
+| Aspect                       | Bitcoin                               | Orchard                                                                                                       |
+| ---------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Input references its source  | `txid:vout` pointer, public           | none; a spend proves tree membership in zero knowledge (see [Chapter 5](./05-action-circuit.md))              |
+| Double-spend prevention      | remove the UTXO from the UTXO set     | publish a [nullifier](./09-notes-nullifiers-commitments.md); nodes reject repeats without learning which note |
+| Is the spent coin deleted?   | yes, from the UTXO set                | no; the commitment tree is append-only, and spent-ness lives in a separate nullifier set                      |
+| Amounts                      | in the clear                          | hidden behind [value commitments](./13-value-commitments.md)                                                  |
+| Balance check                | `sum(inputs) >= sum(outputs)`, public | homomorphic: the net value commitments must net to `value_balance`, enforced by the binding signature         |
+| Input / output count visible | yes, as `vin` / `vout` lengths        | no; dummy Actions pad the bundle so the real spend and output counts do not leak                              |
+
+The one-line summary: spend half = input, output half = output,
+note = UTXO, but a Bitcoin input is a public pointer to the coin
+it spends, whereas an Orchard spend is a zero-knowledge proof of
+ownership that reveals only a nullifier. The net value balance is
+revealed only when value crosses between the transparent and
+shielded pools; that is where a transparent, Bitcoin-style input
+or output connects to the shielded side.
+
 ## 2. Definitions
 
 ### Definition 2.1 (Action)

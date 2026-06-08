@@ -54,6 +54,96 @@ onboarding branch of the fork:
 
 :::
 
+## What Orchard Does
+
+Orchard is Zcash's shielded-payment protocol. It lets one party
+transfer value to another while hiding the sender, the recipient,
+and the amount from every chain observer, and still lets consensus
+verify that no value was created and that no note was spent twice.
+It is the third Zcash shielded pool, after Sprout (2016) and
+Sapling (2018);
+[Background: From Zerocoin to Orchard](./protocol-lineage.md)
+covers the lineage and what each generation changed.
+
+Five objects carry the whole protocol. Each has its own chapter;
+this is the one-line version, expanded in the
+[shielded-pool vocabulary](./protocol-lineage.md#4-the-shielded-pool-vocabulary).
+
+- **Note**: a shielded coin, the analogue of a Bitcoin UTXO,
+  holding an amount, the recipient's key material, and
+  randomness. The chain never sees the note itself, only its
+  **commitment** ([Chapter 9](./09-notes-nullifiers-commitments.md)).
+  For the full Bitcoin-transaction analogy see
+  [Chapter 12, Section 1.1](./12-bundle-and-builder.md#11-relation-to-the-bitcoin-utxo-model).
+- **Note commitment tree / anchor**: every note commitment is
+  appended as a leaf to a fixed-depth (32) Merkle tree. The root
+  at a recent block height is the **anchor**, the public value a
+  spend proves membership against
+  ([Chapter 11](./11-merkle-tree.md)).
+- **Nullifier**: spending a note publishes a **nullifier**
+  $\mathsf{nf}$, deterministically derived from the note and the
+  owner's nullifier key. Each note has exactly one nullifier, so
+  the chain rejects a previously-seen one as a double-spend;
+  observers cannot link a nullifier back to its commitment
+  ([Chapter 9](./09-notes-nullifiers-commitments.md)).
+- **Value commitment**: amounts hide inside additively
+  homomorphic Pedersen commitments $\mathsf{cv^{\mathsf{net}}}$.
+  The homomorphism lets a verifier check that inputs minus
+  outputs equal the declared balance without learning any
+  individual amount ([Chapter 13](./13-value-commitments.md)).
+- **Action**: Orchard's atomic primitive, fusing one note spend
+  and one note output into a single on-chain description and a
+  single circuit. Sapling kept the two apart
+  (`SpendDescription` and `OutputDescription`); fusing them both
+  saves circuit work and hides whether either side is real
+  ([Chapter 5](./05-action-circuit.md),
+  [Chapter 12](./12-bundle-and-builder.md)).
+
+## What the Action Circuit Actually Proves
+
+Sapling has two circuits, `Spend` and `Output`, and carries one
+proof per spent note and one per created note. Orchard fuses them
+into a single **Action** circuit and carries **one Halo 2 proof
+per bundle**, covering every Action in the transaction at once.
+[Chapter 5](./05-action-circuit.md) is the full treatment; this
+is the summary.
+
+For each Action, the circuit proves, in zero knowledge, the
+**conjunction** of the following, without revealing the secrets
+that make them true:
+
+1. **Membership** (spend side): the spent note's commitment
+   $\mathsf{cm}_{\mathsf{old}}$ is a leaf of the tree at the
+   public anchor. The Merkle path is private, so the proof
+   asserts "some note" without revealing which.
+2. **Spend authority**: the prover knows the spend-authorising
+   key behind the validating key $\mathsf{ak}$. The public
+   randomised key $\mathsf{rk}$ is a fresh re-randomisation of
+   $\mathsf{ak}$, tying the proof to the spend signature checked
+   outside the circuit.
+3. **Nullifier integrity**: the public nullifier $\mathsf{nf}$
+   is exactly the specification's nullifier of the old note under
+   the owner's nullifier key $\mathsf{nk}$.
+4. **Output well-formedness**: a fresh note exists whose
+   commitment $\mathsf{cm}^\star_{\mathsf{new}}$ is public and
+   inserted into the tree; the recipient and value stay hidden.
+5. **Value consistency**: the public net value commitment
+   satisfies $\mathsf{cv^{\mathsf{net}}} = [v_{\mathsf{old}} -
+   v_{\mathsf{new}}]\, \mathcal{V} + [\mathsf{rcv}]\, \mathcal{R}$.
+6. **Enable flags**: the public `enableSpends` and
+   `enableOutputs` switch off the spend or output side when the
+   Action is a dummy, so a bundle can be padded to a power-of-two
+   Action count without leaking the real spend or output count.
+
+Notably **absent** from the circuit: bundle-wide balance. That is
+checked outside the SNARK, by the binding signature over the sum
+of the value commitments
+([Chapter 13](./13-value-commitments.md)). Because spend and
+output share one description and the enable flags hide dummies,
+an external observer cannot tell, from the shape of a bundle,
+whether any given Action is a real spend, a real output, both, or
+two dummies.
+
 ## Relationship to the Zcash Protocol Specification
 
 The
