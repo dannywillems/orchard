@@ -141,8 +141,8 @@ The five files most often touched in the last six months on
 | [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs)                             | Visibility, accessor functions, internal renames           |
 | [`src/builder.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs)                             | Builder API tweaks, dummy Action generation                |
 
-See [Discovery Notes](./discovery.md) for the rest of the list and
-the methodology.
+Re-run `git log --since` over the last six months on `main` to
+refresh this ranking.
 
 ### 3.7 A Real First PR
 

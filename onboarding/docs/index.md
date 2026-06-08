@@ -201,10 +201,8 @@ skeleton:
    the reader to modify code or add a test.
 7. **Further Reading**: optional pointers for going deeper.
 
-The supporting pages at the bottom of the sidebar
-([Cheat Sheet](./cheat-sheet.md), [PR Checklist](./pr-checklist.md),
-[Glossary](./glossary.md), [Discovery Notes](./discovery.md)) are
-not chapters; they are reference material returned to during work.
+The [Glossary](./glossary.md) at the bottom of the sidebar is not
+a chapter; it is reference material returned to during work.
 
 ## Prerequisites
 
@@ -246,15 +244,13 @@ All GitHub source links are pinned to upstream tag
 [`0.13.1`](https://github.com/zcash/orchard/releases/tag/0.13.1),
 commit
 [`f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669`](https://github.com/zcash/orchard/tree/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669).
-See [Discovery Notes](./discovery.md) for the full rationale.
 
 ## Chapter Index
 
 The sidebar on the left lists every chapter in order. The intended
 reading path is linear: Chapter 1 maps the crate, Chapter 2
 unlocks the contribution loop, and Chapters 3 to 19 each pick one
-subsystem and follow the seven-section skeleton. Chapter 20 is the
-six-week study plan that ties everything together.
+subsystem and follow the seven-section skeleton.
 
 Before reading chapter 1, two short front-pages set the
 context:
