@@ -65,8 +65,8 @@ implementation over the two bases.
 
 - Per-Action `rk` derivation in
   [`src/builder.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs)
-  (sampling $\alpha$ and constructing $\mathsf{rk} = \mathsf{ak}
-  + [\alpha] \mathcal{G}_{\mathsf{ak}}$).
+  (sampling $\alpha$ and constructing
+  $\mathsf{rk} = \mathsf{ak} + [\alpha] \mathcal{G}_{\mathsf{ak}}$).
 - In-circuit constraint $\mathsf{rk} = \mathsf{ak} + [\alpha]
   \mathcal{G}_{\mathsf{ak}}$ in
   [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs).

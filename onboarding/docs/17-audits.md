@@ -64,6 +64,58 @@ and in the matching releases of `halo2_proofs` and
 `pasta_curves`. Commits between an audit-point branch and the
 next release are the audit-response commits.
 
+### 3.4 The 0.14.0 / NU6.2 Security Fixes (June 2026)
+
+`orchard` 0.14.0 (2026-06-02) fixes two distinct, recently
+disclosed problems. Both land after the
+[`0.13.1`](https://github.com/zcash/orchard/releases/tag/0.13.1)
+tag this course otherwise pins to, and both are recorded in the
+[0.14.0 CHANGELOG](https://github.com/zcash/orchard/blob/0.14.0/CHANGELOG.md).
+
+1. **Under-constrained EC-multiplication gadget (critical, value
+   forgery).** A soundness bug in the `halo2_gadgets`
+   elliptic-curve multiplication gadget left a constraint gap
+   that let false inputs pass the multiplication check. Because
+   the Action circuit (Chapter 5) relies on that gadget, the gap
+   could in principle be used to build a valid-looking proof that
+   spends Orchard value that never existed, that is, to forge ZEC
+   inside the shielded pool, with nothing in the proof for a
+   verifier to catch. The flaw affected all `halo2_gadgets`
+   before `0.5.0` and all `orchard` before `0.14.0`, was
+   disclosed on 2026-06-05 after an AI-assisted audit, and was
+   patched in the field by the NU6.2 network upgrade. In the
+   crate the fix appears as the new circuit-version split
+   `OrchardCircuitVersion::{InsecurePreNu6_2, FixedPostNu6_2}`:
+   `ProvingKey::build()` and `VerifyingKey::build()` now build the
+   fixed post-NU6.2 circuit, and the insecure pre-NU6.2 circuit
+   is reachable only through the explicit `*_for_version`
+   constructors. Details are in the
+   [`halo2_gadgets 0.5.0`](https://github.com/zcash/halo2/security/advisories)
+   release notes.
+
+2. **Non-canonical proof size and malformed `epk`
+   ([GHSA-2x4w-pxqw-58v9](https://github.com/zcash/orchard/security/advisories/GHSA-2x4w-pxqw-58v9)).**
+   Two malleability bugs: an authorized `Bundle` or a PCZT could
+   carry a `zkproof` padded with arbitrary trailing bytes (a
+   non-canonical proof length), and an `Action` could be built
+   with an ephemeral key `epk` that does not encode a
+   non-identity Pallas point. The fix makes
+   `Bundle::<Authorized, V>::try_from_parts` the only way to
+   construct an authorized bundle and rejects any proof whose
+   length is not `Proof::expected_proof_size` for the action
+   count; `Action::from_parts` now returns
+   `Result<_, ActionFromPartsError>`, and the PCZT Transaction
+   Extractor rejects both conditions through the new
+   `TxExtractorError::{NonCanonicalProofSize, InvalidEpk}`
+   variants.
+
+Mapped onto Section 4: finding 1 is a witness- and
+constraint-completeness failure (the _incomplete-addition_ and
+_witness canonicality_ families), and finding 2 is
+consensus-relevant constructor laxity, the same family as the
+identity-`rk` rejection in
+[#492](https://github.com/zcash/orchard/pull/492).
+
 ## 4. Failure Modes
 
 Five recurring categories drive the audit findings. A

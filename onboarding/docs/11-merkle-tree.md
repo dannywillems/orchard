@@ -40,10 +40,13 @@ $\ell$ is encoded as $\mathtt{L\_ORCHARD\_MERKLE}$ bits.
 ### Definition 2.3 (Empty Roots)
 
 $$
-\mathsf{EmptyRoots}[0] = \mathsf{Uncommitted}_{\mathsf{Orchard}},
-\quad
-\mathsf{EmptyRoots}[\ell + 1] =
-\mathsf{MerkleCRH}^{\mathsf{Orchard}}_\ell\big(\mathsf{EmptyRoots}[\ell],\, \mathsf{EmptyRoots}[\ell]\big).
+\begin{aligned}
+\mathsf{EmptyRoots}[0] &= \mathsf{Uncommitted}_{\mathsf{Orchard}}, \\
+\mathsf{EmptyRoots}[\ell + 1] &=
+\mathsf{MerkleCRH}^{\mathsf{Orchard}}_\ell\big(
+  \mathsf{EmptyRoots}[\ell],\, \mathsf{EmptyRoots}[\ell]
+\big).
+\end{aligned}
 $$
 
 ## 3. The Code
@@ -69,7 +72,7 @@ of Definition 2.2.
 
 The Orchard tree itself is not stored in this crate; the
 [`incrementalmerkletree`](https://github.com/zcash/incrementalmerkletree)
-crate maintains a *frontier* (the right-most authentication path
+crate maintains a _frontier_ (the right-most authentication path
 plus the right-most leaf at each level), which is enough to
 append new leaves and produce paths for live notes.
 
