@@ -112,7 +112,7 @@ point for end-to-end debugging.
 2. Read the integration test in
    [`tests/builder.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/tests/builder.rs).
    Which output of the first bundle is fed into the second
-   bundle's `Builder`? Identify the line.
+   bundle's [`Builder`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L544)? Identify the line.
 3. **Code task**. Flip one byte of
    [`src/circuit_proof_test_case.bin`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit_proof_test_case.bin)
    in your working copy (do not commit). Run the relevant test

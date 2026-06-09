@@ -112,8 +112,8 @@ the pin:
   `orchard::circuit::{commit_ivk, commit_ivk::gadgets,`
   `note_commit, note_commit::gadgets, gadget::add_chip}`, and
   `orchard::note::{commitment, nullifier}`, plus a number of
-  `Address`, `Note`, `CommitIvkChip`, `NoteCommitChip`, and
-  `AddChip` accessors. The
+  [`Address`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/address.rs#L19), [`Note`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L141), [`CommitIvkChip`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit/commit_ivk.rs#L34), [`NoteCommitChip`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit/note_commit.rs#L1447), and
+  [`AddChip`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit/gadget/add_chip.rs#L23) accessors. The
   [CHANGELOG entry](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/CHANGELOG.md)
   ("`unstable-voting-circuits` feature flag") lists the full
   surface at the pin. The feature exists to let projects such as

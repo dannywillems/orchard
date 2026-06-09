@@ -78,11 +78,11 @@ authorisations.
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L36-L42
 ```
 
-`SpendingKey` is a newtype around `[u8; 32]` with a `Debug` impl
+[`SpendingKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L42) is a newtype around `[u8; 32]` with a `Debug` impl
 that does not leak the secret bytes. Access goes through
 derivation methods that return wrapper types
-(`SpendAuthorizingKey`, `NullifierDerivingKey`,
-`CommitIvkRandomness`); the inner bytes never escape the module.
+([`SpendAuthorizingKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L121), [`NullifierDerivingKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L232),
+[`CommitIvkRandomness`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L276)); the inner bytes never escape the module.
 
 ### 3.2 The Derivation Tree
 
@@ -96,7 +96,7 @@ implement the tree in order:
 - `SpendingKey -> CommitIvkRandomness` with tag `0x08`.
 - `(ak, nk, rivk) -> FullViewingKey`.
 - `FullViewingKey -> IncomingViewingKey | OutgoingViewingKey |
-  DiversifierKey`.
+DiversifierKey`.
 - `(IncomingViewingKey, Diversifier) -> Address`.
 
 The KDF personalisation `KDF_ORCHARD_PERSONALIZATION =
@@ -109,7 +109,7 @@ the various branches.
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/address.rs#L18-L31
 ```
 
-`Address::from_parts` is the canonical (crate-private) constructor.
+[`Address::from_parts`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/address.rs#L25) is the canonical (crate-private) constructor.
 It does not perform any algebraic check beyond what its argument
 types enforce: callers must guarantee `pk_d` is derived from `d`.
 The doc comment in the source explicitly notes that the public
@@ -143,7 +143,7 @@ Failure Modes.
   types must not leak the raw scalar. The crate uses opaque
   `Debug` formatters; review carefully when adding new key
   types.
-- **Deep `ExtendedSpendingKey` derivation panic**. See
+- **Deep [`ExtendedSpendingKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/zip32.rs#L142) derivation panic**. See
   [#464](https://github.com/zcash/orchard/issues/464): chains
   longer than 255 levels panic.
 
@@ -167,7 +167,7 @@ Failure Modes.
    for every call to `PrfExpand`. For each call, identify the
    one-byte domain tag and cross-check against Section 4.2.3 of
    the spec.
-2. Read the `IncomingViewingKey::address_at` method. How does it
+2. Read the [`IncomingViewingKey::address_at`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L677) method. How does it
    use FF1 to encrypt an integer index to a diversifier? What
    are the implications for the unlinkability of addresses
    produced by adjacent indices?

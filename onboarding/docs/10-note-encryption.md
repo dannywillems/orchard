@@ -64,7 +64,7 @@ which prevents a malleability attack.
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs#L82-L86
 ```
 
-`OrchardDomain` carries just a single field, `rho`, which binds
+[`OrchardDomain`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs#L84) carries just a single field, `rho`, which binds
 the trial-decryption attempt to the Action's nullifier seed. The
 implementation of the
 [`zcash_note_encryption::Domain`](https://github.com/zcash/librustzcash/tree/main/zcash_note_encryption)
@@ -120,7 +120,7 @@ only the compact prefix from a public-server scan.
 
 ## 6. Exercises
 
-1. Read the implementation of `OrchardDomain::derive_esk`. Where
+1. Read the implementation of [`OrchardDomain::derive_esk`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs#L133). Where
    is $\mathsf{esk}$ stored after it is sampled, and how does
    the trial-decryption side recover $\mathsf{epk}$ from the
    ciphertext metadata?

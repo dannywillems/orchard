@@ -51,10 +51,10 @@ the discrete log relative to $\mathcal{R}$.
 
 ### Invariant 2.4 (`NoteValue` Range)
 
-`NoteValue` is an unsigned 64-bit integer; `ValueSum` is a signed
+[`NoteValue`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L100) is an unsigned 64-bit integer; [`ValueSum`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L166) is a signed
 64-bit value (in the Rust sense, so range
 $[-2^{63}, 2^{63})$). The `valueBalanceOrchard` type parameter on
-`Bundle` is user-defined; the Zcash instantiation restricts it to
+[`Bundle`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L163) is user-defined; the Zcash instantiation restricts it to
 51 bits.
 
 ## 3. The Code
@@ -65,8 +65,8 @@ $[-2^{63}, 2^{63})$). The `valueBalanceOrchard` type parameter on
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L1-L40
 ```
 
-`NoteValue`, `ValueSum`, `ValueCommitTrapdoor`, and
-`ValueCommitment` are the four value-domain types. The module
+`NoteValue`, `ValueSum`, [`ValueCommitTrapdoor`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L250), and
+[`ValueCommitment`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L317) are the four value-domain types. The module
 header documents the i64-vs-63-bit caveat in detail.
 
 ### 3.2 Constants
@@ -74,7 +74,7 @@ header documents the i64-vs-63-bit caveat in detail.
 The bases $\mathcal{V}$ and $\mathcal{R}$ are declared as fixed
 bases in
 [`src/constants/fixed_bases.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants/fixed_bases.rs).
-Recent refactors collapsed `OrchardFixedBases` to a unit struct
+Recent refactors collapsed [`OrchardFixedBases`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants/fixed_bases.rs#L106) to a unit struct
 ([PR #496](https://github.com/zcash/orchard/pull/496));
 contributors should expect the API surface to change here.
 
@@ -84,7 +84,7 @@ contributors should expect the API surface to change here.
 implements the digests that the binding signature signs.
 [`src/primitives/redpallas.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs)
 exposes the
-`Binding` marker that selects $\mathcal{R}$ as the base; see
+[`Binding`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs#L22) marker that selects $\mathcal{R}$ as the base; see
 [Chapter 14](./14-redpallas.md).
 
 ## 4. Failure Modes

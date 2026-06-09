@@ -42,7 +42,7 @@ $$
 \mathbin{\,\square\,} \ldots \mathbin{\,\square\,} S_{m_{n-1}}\Big),
 $$
 
-where $\square$ is *incomplete addition* on Pallas (the standard
+where $\square$ is _incomplete addition_ on Pallas (the standard
 chord-and-tangent formula, undefined when the two inputs are
 equal or opposite).
 
@@ -79,7 +79,7 @@ https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/C
 
 Domain separators and the precomputed generator table live in
 [`src/constants/sinsemilla.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants/sinsemilla.rs).
-The Merkle CRH personalisation is `MERKLE_CRH_PERSONALIZATION`;
+The Merkle CRH personalisation is [`MERKLE_CRH_PERSONALIZATION`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants/sinsemilla.rs#L29);
 the note commitment domain string is defined alongside.
 
 ### 3.3 In-Tree Use Sites

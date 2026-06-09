@@ -80,8 +80,8 @@ rarely visible.
 
 The spec-faithful field conversions live in
 [`src/spec.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs).
-`to_base` takes a 64-byte buffer (twice the field size) and
-reduces mod $p$; `to_scalar` does the same mod $q$. The 64-byte
+[`to_base`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L187) takes a 64-byte buffer (twice the field size) and
+reduces mod $p$; [`to_scalar`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L196) does the same mod $q$. The 64-byte
 input lets the bias from naive `mod p` reduction be negligible
 ($< 2^{-128}$).
 

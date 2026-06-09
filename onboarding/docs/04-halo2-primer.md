@@ -102,7 +102,7 @@ and adds its own Orchard-specific chips:
 and
 [`NoteCommitChip`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit/note_commit.rs).
 
-**Example.** Inside the Action circuit's `Circuit::configure`,
+**Example.** Inside the Action circuit's [`Circuit::configure`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L204),
 each chip is constructed by calling its associated `configure`
 function with the columns and helpers it needs. The ECC chip is
 representative:
@@ -113,7 +113,7 @@ https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/s
 
 The call returns a typed `EccConfig` that records which advice,
 fixed, and lookup columns the chip owns. That `EccConfig` is
-stored inside the Action circuit's `Config` struct and later
+stored inside the Action circuit's [`Config`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L89) struct and later
 handed to `EccChip::construct(config)` during synthesis, so
 every region that uses curve arithmetic shares the same column
 layout. The Sinsemilla, Poseidon, and Merkle chips just below

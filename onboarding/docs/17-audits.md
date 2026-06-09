@@ -166,7 +166,7 @@ extra scrutiny.
    Summarise in three sentences how Sinsemilla avoids the
    failure case.
 3. **Code task**. Read the unit test that exercises
-   `Action::from_parts` after
+   [`Action::from_parts`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs#L45) after
    [#492](https://github.com/zcash/orchard/pull/492). Adapt it
    to cover a related rejection (e.g. an identity-valued
    `nf`) and confirm that the new test passes with the current

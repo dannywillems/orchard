@@ -17,7 +17,7 @@ is not in any one file: it is the joint effect of the Halo 2
 proof, the binding signature, the per-Action spend
 authorisations, the nullifier update, and the note-tree update.
 After this chapter the reader can trace a payment from "wallet
-calls `Builder::add_output`" to "the recipient's wallet sees an
+calls [`Builder::add_output`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L598)" to "the recipient's wallet sees an
 incoming note" and identify every cryptographic check that
 licenses that transition.
 
@@ -52,7 +52,7 @@ $$
 \end{aligned}
 $$
 
-The transition is *valid* only if all five conditions below hold;
+The transition is _valid_ only if all five conditions below hold;
 otherwise the transaction containing $B$ is rejected by every
 honest validator.
 
@@ -80,7 +80,7 @@ at height $h$ iff:
 ### Invariant 2.4 (Rho Chaining within a Bundle)
 
 The bundle's Actions are linked by the rho-chain: for each
-Action, the *new* note's $\rho$ is bound to the *old* note's
+Action, the _new_ note's $\rho$ is bound to the _old_ note's
 nullifier of the **same Action**. This couples each fresh note
 to a specific spend within the same bundle, which is what
 prevents two distinct bundles from minting two notes that share a
@@ -173,7 +173,7 @@ computation, under the protocol's security assumptions:
 - The mapping between Actions and the senders / receivers.
 - Whether a given Action is a real spend, real output, dummy
   spend with dummy output, or any combination. The Halo 2 proof
-  attests that *if* enabled, the spend / output is well-formed,
+  attests that _if_ enabled, the spend / output is well-formed,
   but the flags are public and the dummies look identical on the
   wire to real Actions.
 - The values of any individual notes; only the net
@@ -198,7 +198,7 @@ Combining the above:
 
 The transfer is the joint application of these effects. No single
 file in `orchard` is the "transfer"; the transfer is what the
-verifier's *acceptance* of a bundle licenses on chain.
+verifier's _acceptance_ of a bundle licenses on chain.
 
 ### 3.5 Replay, Linkability, and Censorship Resistance
 

@@ -404,7 +404,7 @@ The Sapling circuit is **not** a Halo 2 circuit; it uses
 
 Orchard removed the trusted setup, switched to Halo 2 over the
 Pasta cycle, and fused Sapling's separate Spend and Output
-descriptions into the single `Action`.
+descriptions into the single [`Action`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs#L18).
 
 | Aspect               | Value                                                                                                              |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
@@ -468,7 +468,7 @@ with:
 
 Source:
 [`src/note.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs)
-defines `Note`. Sapling's note carries $(d, \mathsf{pk_d}, v,\, \mathsf{rcm})$
+defines [`Note`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L141). Sapling's note carries $(d, \mathsf{pk_d}, v,\, \mathsf{rcm})$
 only; the Zerocash paper uses the symbol $\mathsf{c}$ where Zcash
 uses $\mathsf{note}$.
 
@@ -580,7 +580,7 @@ An Orchard spend declares an anchor and proves that its input
 note's commitment is one of the leaves of the tree with that
 root, without revealing which leaf.
 
-Source: `Anchor` in
+Source: [`Anchor`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L47) in
 [`src/tree.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs);
 re-exported at the crate root from
 [`src/lib.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/lib.rs).
@@ -751,7 +751,7 @@ lets wallets be a few blocks behind without re-proving.
 #### Where Both Structures Live in Code
 
 The `orchard` crate provides the in-memory data types
-(`MerkleHashOrchard`, `Anchor`, `Nullifier`) but does not own the
+([`MerkleHashOrchard`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L177), `Anchor`, [`Nullifier`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/nullifier.rs#L23)) but does not own the
 storage; the full-node implementation persists both structures.
 
 **Zebra (Rust full node).** The commitment-tree type used by
@@ -870,7 +870,7 @@ single Zcash transaction can mix three things at once:
 
 - Transparent inputs and outputs (the t-side of the
   transaction).
-- An Orchard `Bundle` with one or more Actions (each Action
+- An Orchard [`Bundle`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L163) with one or more Actions (each Action
   consumes one shielded input note and creates one shielded
   output note, with dummies allowed on either side).
 - Analogous Sapling spend/output descriptions when the Sapling
@@ -977,18 +977,18 @@ only the algorithm that produces the bits changes.
 
 ## 6. How the Vocabulary Maps to the Crate
 
-| Concept                              | File                                                                                                                              | Chapter                                   |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| `Note`                               | [`src/note.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs)                       | [9](./09-notes-nullifiers-commitments.md) |
-| `NoteCommitment`, `cm`, `cm*`        | [`src/note/commitment.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/commitment.rs) | [9](./09-notes-nullifiers-commitments.md) |
-| `MerkleHashOrchard`, `Anchor`        | [`src/tree.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs)                       | [11](./11-merkle-tree.md)                 |
-| `Nullifier`                          | [`src/note/nullifier.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/nullifier.rs)   | [9](./09-notes-nullifiers-commitments.md) |
-| `ValueCommitment`, `value_balance`   | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs)                     | [13](./13-value-commitments.md)           |
-| `SpendingKey`, `FVK`, `ivk`, `ovk`   | [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs)                       | [8](./08-keys-and-addresses.md)           |
-| `Action`                             | [`src/action.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs)                   | [5](./05-action-circuit.md)               |
-| `Bundle`, binding signature          | [`src/bundle.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs)                   | [12](./12-bundle-and-builder.md)          |
-| Action circuit (the SNARK predicate) | [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs)                 | [5](./05-action-circuit.md)               |
-| Note encryption                      | [`src/note_encryption.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs) | [10](./10-note-encryption.md)             |
+| Concept                                                                                                                                                                                                                                     | File                                                                                                                              | Chapter                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `Note`                                                                                                                                                                                                                                      | [`src/note.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs)                       | [9](./09-notes-nullifiers-commitments.md) |
+| [`NoteCommitment`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/commitment.rs#L37), `cm`, `cm*`                                                                                                  | [`src/note/commitment.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/commitment.rs) | [9](./09-notes-nullifiers-commitments.md) |
+| `MerkleHashOrchard`, `Anchor`                                                                                                                                                                                                               | [`src/tree.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs)                       | [11](./11-merkle-tree.md)                 |
+| `Nullifier`                                                                                                                                                                                                                                 | [`src/note/nullifier.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/nullifier.rs)   | [9](./09-notes-nullifiers-commitments.md) |
+| [`ValueCommitment`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L317), [`value_balance`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L229) | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs)                     | [13](./13-value-commitments.md)           |
+| [`SpendingKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L42), `FVK`, `ivk`, `ovk`                                                                                                        | [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs)                       | [8](./08-keys-and-addresses.md)           |
+| `Action`                                                                                                                                                                                                                                    | [`src/action.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs)                   | [5](./05-action-circuit.md)               |
+| `Bundle`, binding signature                                                                                                                                                                                                                 | [`src/bundle.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs)                   | [12](./12-bundle-and-builder.md)          |
+| Action circuit (the SNARK predicate)                                                                                                                                                                                                        | [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs)                 | [5](./05-action-circuit.md)               |
+| Note encryption                                                                                                                                                                                                                             | [`src/note_encryption.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs) | [10](./10-note-encryption.md)             |
 
 ## 7. Failure Modes (For the Reader)
 

@@ -24,11 +24,11 @@ A permutation
 $\pi : \mathbb{F}_q^t \to \mathbb{F}_q^t$ over a prime field
 $\mathbb{F}_q$, parameterised by:
 
-- *width* $t$;
-- *S-box exponent* $\alpha$ such that $\gcd(\alpha, q - 1) = 1$;
-- *full rounds* $R_F$, in which the S-box is applied to every
+- _width_ $t$;
+- _S-box exponent_ $\alpha$ such that $\gcd(\alpha, q - 1) = 1$;
+- _full rounds_ $R_F$, in which the S-box is applied to every
   element;
-- *partial rounds* $R_P$, in which the S-box is applied only to
+- _partial rounds_ $R_P$, in which the S-box is applied only to
   the first element;
 - a sequence of round constants $\{c^{(i)}\}$ and an MDS matrix
   $M$.
@@ -100,7 +100,7 @@ two-input hash is a single permutation call.
 - **Field mismatch**. Calling Poseidon with a value that should
   be a `pallas::Scalar` but is provided as a `pallas::Base`
   silently changes the output. The type signature of the
-  primitive enforces the field; bypassing it via `to_base` is a
+  primitive enforces the field; bypassing it via [`to_base`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L187) is a
   red flag.
 - **Wrong S-box exponent**. $\alpha = 5$ is a permutation only
   because $\gcd(5, q - 1) = 1$. A future field change (a new

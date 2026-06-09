@@ -85,7 +85,7 @@ of all $A_i$.
 
 The bundle progresses
 $\texttt{InProgress} \to \texttt{Unauthorized} \to \texttt{Authorized}$
-through the `Authorization` trait. Each transition adds the
+through the [`Authorization`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L156) trait. Each transition adds the
 proof or the signatures.
 
 ### Definition 2.4 (Padding)
@@ -96,7 +96,7 @@ leaking the count of real spends and outputs.
 
 ## 3. The Code
 
-### 3.1 The `Bundle` Type
+### 3.1 The [`Bundle`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L163) Type
 
 ```rust reference title="src/bundle.rs"
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L161-L176
@@ -108,26 +108,26 @@ this block) and the user-defined `valueBalanceOrchard` type `V`.
 The public methods are gated on `T`; only the `Authorized`
 typestate exposes the proof bytes and the per-Action signatures.
 
-### 3.2 The `Builder`
+### 3.2 The [`Builder`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L544)
 
 ```rust reference title="src/builder.rs"
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L541-L562
 ```
 
-`Builder::new(bundle_type, anchor)` opens an empty builder
-parameterised by a `BundleType` (transactional or coinbase, with
+[`Builder::new(bundle_type, anchor)`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L553) opens an empty builder
+parameterised by a [`BundleType`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L40) (transactional or coinbase, with
 spends/outputs enablement flags) and the Merkle root every spend
-must commit under. `add_spend` and `add_output` queue inputs and
-outputs; `build(rng)` shuffles, pads with dummies, and produces
+must commit under. [`add_spend`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L574) and [`add_output`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L598) queue inputs and
+outputs; [`build(rng)`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L659) shuffles, pads with dummies, and produces
 an `Unauthorized` `Bundle` ready for proving.
 
 ### 3.3 The Signing Flow
 
-1. `Bundle::<InProgress, V>::create_proof(rng, &pk)` runs the
+1. [`Bundle::<InProgress, V>::create_proof(rng, &pk)`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L894) runs the
    prover and returns `Bundle<Unauthorized<...>, V>`.
-2. `Bundle::<Unauthorized<...>, V>::prepare(rng, sighash)` derives
+2. [`Bundle::<Unauthorized<...>, V>::prepare(rng, sighash)`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L985) derives
    the SIGHASH-bound signing material.
-3. Per-Action `apply_signatures(&[ask])` produces
+3. Per-Action [`apply_signatures(&[ask])`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L1015) produces
    `Authorized<V>`.
 
 ### 3.4 Batch Verification
@@ -136,7 +136,7 @@ an `Unauthorized` `Bundle` ready for proving.
 batches Halo 2 proof checks and RedPallas signature checks across
 many bundles. Open issue
 [#497](https://github.com/zcash/orchard/issues/497) tracks
-returning a structured error from `add_bundle`.
+returning a structured error from [`add_bundle`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle/batch.rs#L40).
 
 ### 3.5 SIGHASH
 

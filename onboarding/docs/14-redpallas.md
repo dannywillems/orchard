@@ -41,9 +41,9 @@ both can sign messages under $\mathsf{rk}$.
 
 ### Definition 2.3 (Orchard Flavours)
 
-- **`SpendAuth`**: base $\mathcal{G}_{\mathsf{ak}}$, signs the
+- **[`SpendAuth`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs#L18)**: base $\mathcal{G}_{\mathsf{ak}}$, signs the
   per-Action SIGHASH; key is $\mathsf{rk}$.
-- **`Binding`**: base $\mathcal{R}$ (the value commitment
+- **[`Binding`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs#L22)**: base $\mathcal{R}$ (the value commitment
   randomness base), signs the bundle-level SIGHASH; key is
   $\mathsf{bvk}$ from
   [Chapter 13](./13-value-commitments.md).
@@ -77,7 +77,7 @@ implementation over the two bases.
 
 - **Identity `rk`**.
   [#492](https://github.com/zcash/orchard/pull/492) added an
-  explicit rejection of identity `rk` in `Action::from_parts`.
+  explicit rejection of identity `rk` in [`Action::from_parts`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs#L45).
   The defence catches a malformed bundle that would otherwise
   pass verification under a special case of the Schnorr
   equation.
@@ -115,7 +115,7 @@ implementation over the two bases.
    and identify the trait bound that enforces the distinction.
 3. **Code task**. Add a unit test in
    `src/primitives/redpallas.rs` that constructs an
-   identity-valued `VerificationKey<SpendAuth>` and asserts that
+   identity-valued [`VerificationKey<SpendAuth>`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs#L67) and asserts that
    parsing returns an error. Run `cargo test --lib redpallas::`.
 
 ## 7. Further Reading

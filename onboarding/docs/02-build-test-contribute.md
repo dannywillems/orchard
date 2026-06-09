@@ -133,13 +133,13 @@ system end to end; budget about a minute per run.
 The five files most often touched in the last six months on
 `main`, with the kind of change that lands there:
 
-| File                                                                                                                                          | Typical change                                             |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs)                                 | API ergonomics on `NoteValue` (constants, `Default` impls) |
-| [`src/constants/fixed_bases.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants/fixed_bases.rs) | Fixed-base refactors and visibility tightening             |
-| [`src/lib.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/lib.rs)                                     | Re-exports, feature gating, doc comments                   |
-| [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs)                             | Visibility, accessor functions, internal renames           |
-| [`src/builder.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs)                             | Builder API tweaks, dummy Action generation                |
+| File                                                                                                                                          | Typical change                                                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs)                                 | API ergonomics on [`NoteValue`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L100) (constants, `Default` impls) |
+| [`src/constants/fixed_bases.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants/fixed_bases.rs) | Fixed-base refactors and visibility tightening                                                                                                                 |
+| [`src/lib.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/lib.rs)                                     | Re-exports, feature gating, doc comments                                                                                                                       |
+| [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs)                             | Visibility, accessor functions, internal renames                                                                                                               |
+| [`src/builder.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs)                             | Builder API tweaks, dummy Action generation                                                                                                                    |
 
 Re-run `git log --since` over the last six months on `main` to
 refresh this ranking.
@@ -222,7 +222,7 @@ clippy --all-targets --all-features -- -D warnings` removes
    [`tests/builder.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/tests/builder.rs)
    so that the produced bundle has a wrong value commitment. Run
    the test and read the failure message. Identify which assertion
-   inside `Bundle::verify_proof` caught the corruption.
+   inside [`Bundle::verify_proof`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L473) caught the corruption.
 3. **Code task**. Pick one of
    [#191](https://github.com/zcash/orchard/issues/191) or
    [#467](https://github.com/zcash/orchard/issues/467) from the

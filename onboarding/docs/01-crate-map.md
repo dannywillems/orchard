@@ -44,11 +44,11 @@ The crate is `#![no_std]` (with `alloc`) and `#![forbid(unsafe_code)]`.
 The modules form four tiers. Lower tiers are not allowed to depend
 on higher tiers.
 
-- **Tier 0 (primitives)**: `spec`, `constants`, `primitives`.
-- **Tier 1 (data structures)**: `address`, `note`, `value`, `tree`.
-- **Tier 2 (composition)**: `keys`, `zip32`, `note_encryption`,
-  `action`, `circuit`.
-- **Tier 3 (transaction)**: `builder`, `bundle`, `pczt`.
+- **Tier 0 (primitives)**: [`spec`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L1), [`constants`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants.rs#L1), [`primitives`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives.rs#L1).
+- **Tier 1 (data structures)**: [`address`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/address.rs#L1), [`note`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L1), [`value`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L1), [`tree`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L1).
+- **Tier 2 (composition)**: [`keys`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L1), [`zip32`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/zip32.rs#L1), [`note_encryption`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs#L1),
+  [`action`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs#L1), [`circuit`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L1).
+- **Tier 3 (transaction)**: [`builder`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L1), [`bundle`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L1), [`pczt`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/pczt.rs#L1).
 
 ## 3. The Code
 
@@ -59,22 +59,26 @@ https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/s
 ```
 
 Seven names land at the crate root in this `pub use` block:
-`Action`, `Address`, `Bundle`, the re-exported Merkle depth
-constant, three bit-length constants, `Note`, and `Anchor`. The
-`Proof` opaque newtype is defined just below this block in the
+[`Action`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs#L18),
+[`Address`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/address.rs#L19),
+[`Bundle`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L163), the re-exported Merkle depth
+constant, three bit-length constants,
+[`Note`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L141), and
+[`Anchor`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L47). The
+[`Proof`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/lib.rs#L66) opaque newtype is defined just below this block in the
 same file.
 
 ### 3.2 Tier 0: Primitives
 
 - [`src/spec.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs)
-  hosts the small spec-faithful helpers: `to_base`, `to_scalar`,
-  `diversify_hash`, `extract_p`, `prf_expand`, `commit_ivk`,
-  `ka_orchard`. They are pure functions of bytes.
+  hosts the small spec-faithful helpers: [`to_base`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L187), [`to_scalar`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L196),
+  [`diversify_hash`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L230), [`extract_p`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L276), `prf_expand`, [`commit_ivk`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L211),
+  [`ka_orchard`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/spec.rs#L251). They are pure functions of bytes.
 - [`src/constants.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants.rs)
   re-exports submodule constants and declares the canonical
   bit-length and depth constants.
 - [`src/primitives.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives.rs)
-  exposes only `redpallas`; see
+  exposes only [`redpallas`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs#L1); see
   [Chapter 14 (RedPallas)](./14-redpallas.md).
 
 ### 3.3 Tier 1: Data Structures
@@ -85,7 +89,7 @@ same file.
   with `commitment.rs` and `nullifier.rs`: the `Note` type, its
   commitment, and its nullifier.
 - [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs):
-  `NoteValue`, `ValueSum`, `ValueCommitment`.
+  [`NoteValue`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L100), [`ValueSum`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L166), [`ValueCommitment`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L317).
 - [`src/tree.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs):
   the Sinsemilla-based incremental Merkle tree wrapper.
 
@@ -132,16 +136,16 @@ A wallet building one Action follows the tiers from the bottom up:
    (Tier 1).
 3. Open a
    [`Builder`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs)
-   and call `add_spend` / `add_output` (Tier 3).
-4. `Builder::build` constructs an
+   and call [`add_spend`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L574) / [`add_output`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L598) (Tier 3).
+4. [`Builder::build`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L659) constructs an
    `Unauthorized` [`Bundle`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs)
    containing all
    [`Action`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs)
    descriptions and the witness.
-5. `Bundle::create_proof` runs the
+5. [`Bundle::create_proof`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L894) runs the
    [`circuit`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs)
    prover.
-6. `Bundle::apply_signatures` produces the per-Action
+6. [`Bundle::apply_signatures`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/builder.rs#L1015) produces the per-Action
    [`redpallas`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs)
    spend-authorising signatures and the binding signature.
 

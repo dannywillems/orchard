@@ -210,7 +210,7 @@ without revealing the input.
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L87-L105
 ```
 
-`Config` bundles every chip configuration the Action circuit uses:
+[`Config`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L89) bundles every chip configuration the Action circuit uses:
 the primary instance column, the `q_orchard` selector, ten advice
 columns, the addition chip, the ECC chip, a Poseidon
 $P_{128}^{\mathrm{Pasta}}$ sponge, two Merkle configs (one per
@@ -223,7 +223,7 @@ distinct configurations).
 
 ### 3.3 Synthesise
 
-`Circuit::synthesize` runs top to bottom: load the ECC and
+[`Circuit::synthesize`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L394) runs top to bottom: load the ECC and
 Sinsemilla chips, witness the Merkle path, derive `rk`, derive the
 nullifier, build both note commitments, and finally build the
 value commitment. Each step ends with a public-input equality
@@ -233,10 +233,10 @@ constraint against the appropriate instance column.
 
 Halo 2 needs two derived keys per circuit:
 
-- A **`VerifyingKey`**: the structured reference string (SRS) plus
+- A **[`VerifyingKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L767)**: the structured reference string (SRS) plus
   the commitments to the fixed columns (selectors, lookup tables,
   precomputed bases). Sufficient to verify a proof.
-- A **`ProvingKey`**: the `VerifyingKey` plus the prover-side
+- A **[`ProvingKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L786)**: the `VerifyingKey` plus the prover-side
   precomputed data (the Lagrange evaluation of every fixed
   column, the permutation argument data). Sufficient to produce a
   proof.
@@ -251,11 +251,11 @@ Both types are declared in
 
 Neither key is stored as a file in the repository. Both are
 **deterministically (re)derived** at process start by calling
-`VerifyingKey::build()` or `ProvingKey::build()`. Both functions
+[`VerifyingKey::build()`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L774) or [`ProvingKey::build()`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L793). Both functions
 take no parameters: the SRS is built from
 `halo2_proofs::poly::commitment::Params::new(K)` and the
 verifying key from `plonk::keygen_vk(&params, &circuit)` against
-the default `Circuit`. The construction is reproducible bit for
+the default [`Circuit`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L109). The construction is reproducible bit for
 bit because it has no random input; the SRS is the IPA-style
 public parameters, with no trusted setup.
 

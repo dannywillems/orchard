@@ -69,15 +69,15 @@ sharing a nullifier without one of them being a forgery.
 
 ## 3. The Code
 
-### 3.1 The `Note` Type
+### 3.1 The [`Note`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L141) Type
 
 ```rust reference title="src/note.rs"
 https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L139-L155
 ```
 
-The struct has four private fields: the `Address` recipient, the
-`NoteValue`, the `Rho` creation identifier, and the
-`RandomSeed`. From the latter, $\psi$ and $\mathsf{rcm}$ are
+The struct has four private fields: the [`Address`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/address.rs#L19) recipient, the
+[`NoteValue`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L100), the [`Rho`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L34) creation identifier, and the
+[`RandomSeed`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L75). From the latter, $\psi$ and $\mathsf{rcm}$ are
 derived deterministically ([ZIP 212](https://zips.z.cash/zip-0212)). Note equality is defined by
 the commitment, not by structural equality of the fields, which
 prevents two distinct field encodings of the "same" note from
@@ -104,8 +104,8 @@ https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/s
 
 `Rho` is a newtype around `pallas::Base` with a tightly
 controlled construction surface. The public API exposes
-`Rho::from_nf_old` (chaining from a previous nullifier) and
-`Rho::from_bytes` (used only inside parsing); a free constructor
+[`Rho::from_nf_old`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L62) (chaining from a previous nullifier) and
+[`Rho::from_bytes`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L48) (used only inside parsing); a free constructor
 taking arbitrary field elements does not exist.
 
 ## 4. Failure Modes
@@ -147,7 +147,7 @@ taking arbitrary field elements does not exist.
    [`src/note/commitment.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/commitment.rs)
    and write down, in pseudocode, the byte encoding fed into
    `SinsemillaCommit`. Cite the bit-length constants
-   (`L_ORCHARD_BASE`, `L_VALUE`, ...) you use.
+   ([`L_ORCHARD_BASE`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants.rs#L25), [`L_VALUE`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants.rs#L31), ...) you use.
 2. Identify the unit test in
    [`src/note/nullifier.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/nullifier.rs)
    that checks against an external test vector. What format do

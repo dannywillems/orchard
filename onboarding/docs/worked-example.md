@@ -1,7 +1,7 @@
 ---
 sidebar_position: 53
-title: 'Worked Example: Byte-by-Byte Anatomy of an Orchard Bundle'
-description: 'A reproducible Orchard transaction (from tests/builder.rs) dissected field by field, with every byte linked to the source code that produced it and the ZIP that specifies its wire format.'
+title: "Worked Example: Byte-by-Byte Anatomy of an Orchard Bundle"
+description: "A reproducible Orchard transaction (from tests/builder.rs) dissected field by field, with every byte linked to the source code that produced it and the ZIP that specifies its wire format."
 ---
 
 # Worked Example: Byte-by-Byte Anatomy of an Orchard Bundle
@@ -47,21 +47,21 @@ Rust type or function that produces the bytes; serialisation
 itself happens in `librustzcash`'s transaction encoder against
 the public surface of this crate.
 
-| Offset | Size       | Field             | Wire encoding                                            | Source                                                                                                                                                                              |
-| -----: | ---------: | ----------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|      0 | 32 bytes   | `cv_net_i`        | Compressed Pallas point (`pallas::Point::to_bytes`)      | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs) `ValueCommitment::to_bytes`                                            |
-|     32 | 32 bytes   | `nf_i`            | Pallas base-field element, little-endian                 | [`src/note/nullifier.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/nullifier.rs) `Nullifier::to_bytes`                                |
-|     64 | 32 bytes   | `rk_i`            | Compressed Pallas point (RedPallas VerificationKey)      | [`src/primitives/redpallas.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs) (via [`reddsa`](https://github.com/ZcashFoundation/reddsa)) |
-|     96 | 32 bytes   | `cmx_i`           | Pallas base-field element, little-endian                 | [`src/note/commitment.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/commitment.rs) `ExtractedNoteCommitment::to_bytes`                |
-|    128 | 32 bytes   | `epk_i`           | Compressed Pallas point (ephemeral public key)           | [`src/note.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L311-L319) `TransmittedNoteCiphertext.epk_bytes`                          |
-|    160 | 580 bytes  | `enc_ciphertext_i`| ChaCha20-Poly1305 AEAD output (plaintext + 16-byte tag)  | [`src/note_encryption.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs) `OrchardDomain`                                    |
-|    740 | 80 bytes   | `out_ciphertext_i`| ChaCha20-Poly1305 AEAD output (32-byte `pk_d` + 32-byte `esk` + 16-byte tag) | [`src/note_encryption.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs) `OrchardDomain` |
-|    820 |        end |                   |                                                          |                                                                                                                                                                                    |
+| Offset |      Size | Field              | Wire encoding                                                                | Source                                                                                                                                                                                                                                                                             |
+| -----: | --------: | ------------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|      0 |  32 bytes | `cv_net_i`         | Compressed Pallas point (`pallas::Point::to_bytes`)                          | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs) [`ValueCommitment::to_bytes`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L384)                                      |
+|     32 |  32 bytes | `nf_i`             | Pallas base-field element, little-endian                                     | [`src/note/nullifier.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/nullifier.rs) [`Nullifier::to_bytes`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/nullifier.rs#L63)                  |
+|     64 |  32 bytes | `rk_i`             | Compressed Pallas point (RedPallas VerificationKey)                          | [`src/primitives/redpallas.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs) (via [`reddsa`](https://github.com/ZcashFoundation/reddsa))                                                                            |
+|     96 |  32 bytes | `cmx_i`            | Pallas base-field element, little-endian                                     | [`src/note/commitment.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/commitment.rs) [`ExtractedNoteCommitment::to_bytes`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note/commitment.rs#L92) |
+|    128 |  32 bytes | `epk_i`            | Compressed Pallas point (ephemeral public key)                               | [`src/note.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L311-L319) [`TransmittedNoteCiphertext.epk_bytes`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L311)                     |
+|    160 | 580 bytes | `enc_ciphertext_i` | ChaCha20-Poly1305 AEAD output (plaintext + 16-byte tag)                      | [`src/note_encryption.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs) [`OrchardDomain`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs#L84)                     |
+|    740 |  80 bytes | `out_ciphertext_i` | ChaCha20-Poly1305 AEAD output (32-byte `pk_d` + 32-byte `esk` + 16-byte tag) | [`src/note_encryption.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note_encryption.rs) `OrchardDomain`                                                                                                                                  |
+|    820 |       end |                    |                                                                              |                                                                                                                                                                                                                                                                                    |
 
 The in-memory layout of the same data is the
 [`Action<A>`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs#L18-L27)
 struct (six fields, with the spend-authorising signature stored
-separately in the `Authorization` typestate parameter `A`).
+separately in the [`Authorization`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L156) typestate parameter `A`).
 Field semantics are documented in
 [Chapter 5 (the Action circuit)](./05-action-circuit.md) and
 [Chapter 12 (Bundle and Builder)](./12-bundle-and-builder.md).
@@ -72,15 +72,15 @@ The plaintext that is encrypted is the
 [`NotePlaintextBytes`](https://github.com/zcash/librustzcash/tree/main/zcash_note_encryption)
 encoding (564 bytes) followed by a 16-byte Poly1305 tag:
 
-| Sub-offset | Size       | Field          | Source                                                                                                                                            |
-| ---------: | ---------: | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-|          0 |   1 byte   | lead byte      | [ZIP 212](https://zips.z.cash/zip-0212) version tag (`0x02` for Orchard)                                                                          |
-|          1 |  11 bytes  | diversifier `d`| [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs) `Diversifier`                          |
-|         12 |   8 bytes  | value $v$      | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs) `NoteValue` (little-endian u64)      |
-|         20 |  32 bytes  | `rseed`        | [`src/note.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs) `RandomSeed`                           |
-|         52 | 512 bytes  | memo           | Per [ZIP 302](https://zips.z.cash/zip-0302); padded to a fixed length                                                                             |
-|        564 |  16 bytes  | AEAD tag       | Poly1305 over the ChaCha20 keystream of the previous 564 bytes                                                                                    |
-|        580 |        end |                |                                                                                                                                                   |
+| Sub-offset |      Size | Field           | Source                                                                                                                                                                                                                                            |
+| ---------: | --------: | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|          0 |    1 byte | lead byte       | [ZIP 212](https://zips.z.cash/zip-0212) version tag (`0x02` for Orchard)                                                                                                                                                                          |
+|          1 |  11 bytes | diversifier `d` | [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs) [`Diversifier`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L531)                      |
+|         12 |   8 bytes | value $v$       | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs) [`NoteValue`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L100) (little-endian u64) |
+|         20 |  32 bytes | `rseed`         | [`src/note.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs) [`RandomSeed`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/note.rs#L75)                        |
+|         52 | 512 bytes | memo            | Per [ZIP 302](https://zips.z.cash/zip-0302); padded to a fixed length                                                                                                                                                                             |
+|        564 |  16 bytes | AEAD tag        | Poly1305 over the ChaCha20 keystream of the previous 564 bytes                                                                                                                                                                                    |
+|        580 |       end |                 |                                                                                                                                                                                                                                                   |
 
 The recipient derives $\psi$ and $\mathsf{rcm}$ from `rseed`
 (see [Chapter 10](./10-note-encryption.md), Section 3.1), so the
@@ -94,12 +94,12 @@ their own outgoing viewing key. It encrypts a fixed 64-byte
 plaintext under a key derived from $\mathsf{ovk}$ and the
 Action's public fields:
 
-| Sub-offset | Size       | Field          | Source                                                                                                                                        |
-| ---------: | ---------: | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-|          0 |  32 bytes  | $\mathsf{pk_d}$| [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs) `DiversifiedTransmissionKey`      |
-|         32 |  32 bytes  | $\mathsf{esk}$ | [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs) `EphemeralSecretKey`              |
-|         64 |  16 bytes  | AEAD tag       | Poly1305                                                                                                                                      |
-|         80 |        end |                |                                                                                                                                               |
+| Sub-offset |     Size | Field           | Source                                                                                                                                                                                                                                      |
+| ---------: | -------: | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|          0 | 32 bytes | $\mathsf{pk_d}$ | [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs) [`DiversifiedTransmissionKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L756) |
+|         32 | 32 bytes | $\mathsf{esk}$  | [`src/keys.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs) [`EphemeralSecretKey`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/keys.rs#L806)         |
+|         64 | 16 bytes | AEAD tag        | Poly1305                                                                                                                                                                                                                                    |
+|         80 |      end |                 |                                                                                                                                                                                                                                             |
 
 ## 3. Anatomy of the Whole Bundle
 
@@ -108,17 +108,17 @@ Transaction Fields") is laid out as follows. For our two-Action
 bundle the total is approximately **3.85 KiB**, dominated by the
 two Action descriptions and the proof.
 
-| Field                          | Size                              | Wire encoding                                                                                                                                       | Source                                                                                                                                                  |
-| ------------------------------ | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `nActionsOrchard`              | `CompactSize` (1 byte for $N=2$)  | Variable-length count prefix                                                                                                                        | Transaction encoder                                                                                                                                     |
-| `vActionsOrchard`              | $N \times 820 = 1640$ bytes       | Concatenated Action descriptions, in shuffle order (see [Chapter 12](./12-bundle-and-builder.md))                                                   | [`src/action.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs)                                          |
-| `flagsOrchard`                 | 1 byte                            | Bit 0 = `enableSpends`, Bit 1 = `enableOutputs`, bits 2..7 reserved zero                                                                            | [`src/bundle.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L57-L74) `Flags`                          |
-| `valueBalanceOrchard`          | 8 bytes                           | Signed 63-bit integer encoded as a signed little-endian i64                                                                                          | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs) `ValueSum`                                 |
-| `anchorOrchard`                | 32 bytes                          | Pallas base-field element                                                                                                                            | [`src/tree.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs) `Anchor::to_bytes`                           |
-| `sizeProofsOrchard`            | `CompactSize`                     | Byte length of the Halo 2 proof that follows                                                                                                         | Transaction encoder                                                                                                                                     |
-| `proofsOrchard`                | ~2 KiB (varies with $K$, not $N$) | The Halo 2 IPA proof bytes                                                                                                                           | [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs) `Proof::create`                        |
-| `vSpendAuthSigsOrchard`        | $N \times 64 = 128$ bytes         | Concatenated RedPallas `SpendAuth` signatures                                                                                                        | [`src/primitives/redpallas.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs)              |
-| `bindingSigOrchard`            | 64 bytes                          | One RedPallas `Binding` signature                                                                                                                    | [`src/primitives/redpallas.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs)              |
+| Field                   | Size                              | Wire encoding                                                                                                                                                   | Source                                                                                                                                                                                                                                  |
+| ----------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `nActionsOrchard`       | `CompactSize` (1 byte for $N=2$)  | Variable-length count prefix                                                                                                                                    | Transaction encoder                                                                                                                                                                                                                     |
+| `vActionsOrchard`       | $N \times 820 = 1640$ bytes       | Concatenated Action descriptions, in shuffle order (see [Chapter 12](./12-bundle-and-builder.md))                                                               | [`src/action.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/action.rs)                                                                                                                         |
+| `flagsOrchard`          | 1 byte                            | Bit 0 = `enableSpends`, Bit 1 = `enableOutputs`, bits 2..7 reserved zero                                                                                        | [`src/bundle.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L57-L74) [`Flags`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L57)     |
+| `valueBalanceOrchard`   | 8 bytes                           | Signed 63-bit integer encoded as a signed little-endian i64                                                                                                     | [`src/value.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs) [`ValueSum`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/value.rs#L166)            |
+| `anchorOrchard`         | 32 bytes                          | Pallas base-field element                                                                                                                                       | [`src/tree.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs) [`Anchor::to_bytes`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L81)        |
+| `sizeProofsOrchard`     | `CompactSize`                     | Byte length of the Halo 2 proof that follows                                                                                                                    | Transaction encoder                                                                                                                                                                                                                     |
+| `proofsOrchard`         | ~2 KiB (varies with $K$, not $N$) | The Halo 2 IPA proof bytes                                                                                                                                      | [`src/circuit.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs) [`Proof::create`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit.rs#L919) |
+| `vSpendAuthSigsOrchard` | $N \times 64 = 128$ bytes         | Concatenated RedPallas [`SpendAuth`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs#L18) signatures | [`src/primitives/redpallas.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs)                                                                                             |
+| `bindingSigOrchard`     | 64 bytes                          | One RedPallas [`Binding`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs#L22) signature             | [`src/primitives/redpallas.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/primitives/redpallas.rs)                                                                                             |
 
 The fixed-size parts of the bundle for this scenario:
 
@@ -151,21 +151,21 @@ checks of
 [Chapter 18 Definition 2.3](./18-shielded-transfers.md#definition-23-bundle-validity).
 The mapping:
 
-| Wire field                  | Consumed by                                                                                                                                                |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cv_net_i`                  | Sum into $\sum_i \mathsf{cv}^{\mathsf{net}}_i$; binding-signature key derivation (Cond. 2.3.4) and value commitment public input to the proof.             |
-| `nf_i`                      | Nullifier-set disjointness (Cond. 2.3.2); public input to the proof.                                                                                       |
-| `rk_i`                      | Spend-authorising signature verification (Cond. 2.3.5); public input to the proof.                                                                         |
-| `cmx_i`                     | Inserted into the note commitment tree at acceptance; public input to the proof.                                                                           |
-| `epk_i`                     | Recipient KDF input; out-ciphertext sender recovery input.                                                                                                 |
-| `enc_ciphertext_i`          | Trial-decryption by recipients with the matching $\mathsf{ivk}$.                                                                                           |
-| `out_ciphertext_i`          | Sender-side recovery with the matching $\mathsf{ovk}$.                                                                                                     |
-| `flagsOrchard`              | Selects whether the spend / output subcircuit is active (Cond. 2.3.3 via `enableSpends`, `enableOutputs`).                                                 |
-| `valueBalanceOrchard`       | Binding-signature key (Cond. 2.3.4); chain-level pool accounting.                                                                                          |
-| `anchorOrchard`             | Anchor freshness (Cond. 2.3.1); public input to the proof.                                                                                                 |
-| `proofsOrchard`             | Halo 2 verifier input (Cond. 2.3.3).                                                                                                                       |
-| `vSpendAuthSigsOrchard`     | Per-Action signature verification (Cond. 2.3.5).                                                                                                           |
-| `bindingSigOrchard`         | Binding-signature verification (Cond. 2.3.4).                                                                                                              |
+| Wire field              | Consumed by                                                                                                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cv_net_i`              | Sum into $\sum_i \mathsf{cv}^{\mathsf{net}}_i$; binding-signature key derivation (Cond. 2.3.4) and value commitment public input to the proof. |
+| `nf_i`                  | Nullifier-set disjointness (Cond. 2.3.2); public input to the proof.                                                                           |
+| `rk_i`                  | Spend-authorising signature verification (Cond. 2.3.5); public input to the proof.                                                             |
+| `cmx_i`                 | Inserted into the note commitment tree at acceptance; public input to the proof.                                                               |
+| `epk_i`                 | Recipient KDF input; out-ciphertext sender recovery input.                                                                                     |
+| `enc_ciphertext_i`      | Trial-decryption by recipients with the matching $\mathsf{ivk}$.                                                                               |
+| `out_ciphertext_i`      | Sender-side recovery with the matching $\mathsf{ovk}$.                                                                                         |
+| `flagsOrchard`          | Selects whether the spend / output subcircuit is active (Cond. 2.3.3 via `enableSpends`, `enableOutputs`).                                     |
+| `valueBalanceOrchard`   | Binding-signature key (Cond. 2.3.4); chain-level pool accounting.                                                                              |
+| `anchorOrchard`         | Anchor freshness (Cond. 2.3.1); public input to the proof.                                                                                     |
+| `proofsOrchard`         | Halo 2 verifier input (Cond. 2.3.3).                                                                                                           |
+| `vSpendAuthSigsOrchard` | Per-Action signature verification (Cond. 2.3.5).                                                                                               |
+| `bindingSigOrchard`     | Binding-signature verification (Cond. 2.3.4).                                                                                                  |
 
 If the reader has internalised this table, the rest of the
 chapters are commentary.
@@ -183,7 +183,7 @@ cargo test --release --test builder
 
 To inspect a real Bundle programmatically without going through
 a transaction encoder, the integration test exposes the
-`Authorized` Bundle via `verify_bundle`. Add the following
+[`Authorized`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/bundle.rs#L434) Bundle via `verify_bundle`. Add the following
 fragment to a copy of
 [`tests/builder.rs`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/tests/builder.rs)
 after the first bundle is built:
@@ -226,7 +226,7 @@ vectors. Two files in this repository support this section:
   third-party dependencies. Used in
   [Section 6.7](#67-decoding-this-yourself).
 
-The Python *generators* that produced the JSON (the reference
+The Python _generators_ that produced the JSON (the reference
 implementations of Sinsemilla, Poseidon, the Orchard note model,
 and the v5 transaction encoder) live upstream in
 [`zcash-hackworks/zcash-test-vectors`](https://github.com/zcash-hackworks/zcash-test-vectors)
@@ -380,11 +380,10 @@ transaction hex.
 
 - **Field sizes match Section 2**. Each Action is exactly 820
   bytes (32 + 32 + 32 + 32 + 32 + 580 + 80). Each signature is
-  exactly 64 bytes. The bundle has $1 + 3 \cdot 820 + 1 + 8 + 32
-  + 2 + 270 + 3 \cdot 64 + 64 = 2868 + 270 = 3138$ ... actually
-  $1 + 2460 + 1 + 8 + 32 + 2 + 270 + 192 + 64 = 3030$ Orchard
-  bytes plus the 1-byte CompactSize for `nActionsOrchard` = 3031
-  total. Matches the parser's "Orchard region total: 3031".
+  exactly 64 bytes. Summing the Orchard region,
+  $1 + 2460 + 1 + 8 + 32 + 2 + 270 + 192 + 64 = 3030$ bytes, plus
+  the 1-byte CompactSize for `nActionsOrchard`, gives 3031 total,
+  matching the parser's "Orchard region total: 3031".
 - **Distinct nullifiers**. The three nf values above are
   pairwise distinct. If they were not, the bundle would violate
   the internal-disjointness clause of

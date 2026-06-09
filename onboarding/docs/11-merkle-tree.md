@@ -58,13 +58,13 @@ https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/s
 ```
 
 The `lazy_static!` blocks precompute
-`UNCOMMITTED_ORCHARD` and the 33-entry `EMPTY_ROOTS` table once
+[`UNCOMMITTED_ORCHARD`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L29) and the 33-entry [`EMPTY_ROOTS`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L30) table once
 per process.
 
-### 3.2 `MerkleHashOrchard`
+### 3.2 [`MerkleHashOrchard`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L177)
 
 A `pallas::Base` wrapper that implements
-`incrementalmerkletree::Hashable`. The trait's `combine` is
+`incrementalmerkletree::Hashable`. The trait's [`combine`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/tree.rs#L228) is
 forwarded to `combine_inner`, which performs the Sinsemilla call
 of Definition 2.2.
 
@@ -85,7 +85,7 @@ equal the public anchor.
 
 ## 4. Failure Modes
 
-- **Off-by-one depth**. `MERKLE_DEPTH_ORCHARD = 32` means 32
+- **Off-by-one depth**. [`MERKLE_DEPTH_ORCHARD = 32`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/constants.rs#L14) means 32
   levels of inner hashes; PRs that introduce `33` or `31` in any
   hash level off-set break consensus.
 - **Forgetting $\ell$ in the input**. The depth tag prevents a
