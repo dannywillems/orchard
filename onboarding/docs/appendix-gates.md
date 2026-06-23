@@ -1,1257 +1,1492 @@
 ---
 sidebar_position: 21
-title: "Appendix: Action Circuit Polynomial Constraints"
-description: Auto-generated KaTeX rendering of every gate polynomial in the Orchard 0.13.1 Action circuit verifier key.
+title: "Appendix: Action Circuit Gate Constraints"
+description: Every gate of the Orchard Action circuit, grouped by source-level create_gate, with named constraints and KaTeX polynomials.
 ---
 
-# Appendix: Action Circuit Polynomial Constraints
+# Appendix: Action Circuit Gate Constraints
 
-This appendix lists the 193 polynomial constraints of the
-Orchard Action circuit at orchard 0.13.1. Each polynomial $P$
-vanishes on every valid assignment: $P = 0$.
+This appendix lists every gate of the Orchard Action circuit: 55 source-level gates holding 193 polynomial constraints in total. Each
+polynomial $P$ vanishes on every valid assignment: $P = 0$.
 
-**Provenance.** The polynomials are extracted from the
-[`src/circuit_description`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit_description)
-dump (a serialisation of
-`halo2_proofs::plonk::PinnedVerificationKey`) by the
-[`gates-to-latex`](https://github.com/dannywillems/orchard/tree/onboarding/onboarding/tools/gates-to-latex)
-tool that ships in this repo. To regenerate after an upstream
-change, run `make appendix-gates` from the `onboarding/`
-directory; the tool re-reads the vendored copy at
-`onboarding/data/orchard-0.13.1-circuit_description.txt`.
+**Provenance.** The gates are read from the `Debug` rendering of
+the freshly configured (pre-`compress_selectors`)
+`halo2_proofs::plonk::ConstraintSystem`, emitted by the
+`dump_action_constraint_system` test in the orchard crate and
+vendored at
+`onboarding/data/orchard-action-constraint-system.txt`. Unlike the
+pinned verifying key, this rendering keeps every
+`meta.create_gate(...)` name, the per-constraint labels passed to
+`Constraints::with_selector`, and the original polynomials before
+Halo 2's selector-compression pass rewrites them. To regenerate
+after a circuit change, run `make appendix-gates` from the
+`onboarding/` directory.
 
-**Notation.** The advice, fixed, and instance columns are
-indexed by their `column_index` in the constraint system:
+**Why this shape.** Grouping by source-level gate (rather than by
+the compressed fixed column of the verifying key) keeps the doc
+next to the code: each gate below is one `create_gate` call, each
+named constraint is one proof obligation, and the polynomial is the
+exact expression to formalise. This is the obligation list for
+verifying the gates one at a time.
+
+**Notation.**
 
 - $A_c$, $A_c^{(+r)}$, $A_c^{(-r)}$: advice column $c$ at the
   current row, rotated by $+r$ or $-r$.
-- $F_c$, $F_c^{(+r)}$, $F_c^{(-r)}$: fixed column $c$ at the
-  current row or a rotation. The pinned circuit uses 29 fixed
-  columns; the lowest indices are the selector-promotion
-  columns produced by Halo 2's `compress_selectors` pass, and
-  the higher indices carry the chip-level constants used by
-  the ECC, Sinsemilla, and Poseidon chips.
-- Constants are rendered in hex. Values below `0xffff` are
-  shown in full; larger values are truncated to a six-hex-digit
-  head followed by `\ldots` to keep KaTeX expressions readable.
-
-**Grouping.** Halo 2's `compress_selectors` pass packs every
-`meta.create_gate(...)` group into a single shared fixed column
-by giving the column a small integer value per gate member.
-That value selects the member through an envelope of the form
-$F_c \cdot (k_1 - F_c) \cdot \dots \cdot (k_n - F_c)$. Two
-polynomials that share the same envelope column $c$ therefore
-come from the same source-level `create_gate` call. We use $c$
-as the group key and list polynomials per group; the
-source-level chip that owns each group can be identified by
-opening `src/circuit.rs` and reading the chip-configuration
-calls in `Circuit::configure` in order. Polynomials that do
-not match the envelope pattern are listed under "Ungrouped".
-
-**Scope.** This is the raw polynomial form, not yet annotated
-with chip-level meaning. Phase 2 of this work would attach a
-source-level chip name to each group (ECC, Sinsemilla,
-Poseidon, Merkle, CommitIvk, NoteCommit). Doing so cleanly
-requires upstream changes in `halo2_proofs` to expose gate
-names; the pinned dump deliberately strips them.
+- $F_c$, $I_c$: fixed and instance column $c$ (with the same
+  rotation notation).
+- Each constraint is enforced only when the gate's selector is
+  active. That selector factor is peeled off and shown as
+  "selector $q_n$" in the heading, so the polynomial below is the
+  constraint body alone.
+- Constants are rendered in hex. Values below `0xffff` are shown in
+  full; larger values are truncated to a six-hex-digit head
+  followed by `\ldots` to keep KaTeX readable.
 
 ## Summary
 
-| Envelope column $c$ | Polynomials in group | Original indices                                                  |
-| ------------------- | -------------------- | ----------------------------------------------------------------- |
-| $F_{16}$            | 2                    | 87, 88                                                            |
-| $F_{17}$            | 2                    | 97, 98                                                            |
-| $F_{18}$            | 17                   | 1, 2, 3, 4, 5, 6, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34      |
-| $F_{19}$            | 17                   | 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,\,... |
-| $F_{20}$            | 18                   | 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, \,... |
-| $F_{21}$            | 18                   | 53, 54, 55, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, \,... |
-| $F_{22}$            | 4                    | 56, 57, 58, 59                                                    |
-| $F_{23}$            | 4                    | 60, 61, 62, 63                                                    |
-| $F_{24}$            | 11                   | 79, 80, 81, 82, 83, 84, 85, 86, 89, 90, 91                        |
-| $F_{25}$            | 26                   | 92, 93, 94, 95, 96, 106, 107, 108, 109, 110, 111, 112, 113, \,... |
-| $F_{26}$            | 21                   | 99, 100, 101, 102, 103, 104, 105, 127, 128, 129, 130, 131, 1\,... |
-| $F_{27}$            | 25                   | 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, \,... |
-| $F_{28}$            | 28                   | 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, \,... |
+| #   | Gate                                                      | Constraints | Source                                      |
+| --- | --------------------------------------------------------- | ----------- | ------------------------------------------- |
+| 1   | `Orchard circuit checks`                                  | 4           | Action (src/circuit.rs)                     |
+| 2   | `Field element addition: c = a + b`                       | 1           | AddChip (src/circuit/gadget/add_chip.rs)    |
+| 3   | `Short lookup bitshift`                                   | 1           | EccChip / utilities (halo2_gadgets)         |
+| 4   | `witness point`                                           | 2           | EccChip / utilities (halo2_gadgets)         |
+| 5   | `witness non-identity point`                              | 1           | EccChip / utilities (halo2_gadgets)         |
+| 6   | `incomplete addition`                                     | 2           | EccChip / utilities (halo2_gadgets)         |
+| 7   | `complete addition`                                       | 12          | EccChip / utilities (halo2_gadgets)         |
+| 8   | `q_mul_1 == 1 checks`                                     | 1           | EccChip / utilities (halo2_gadgets)         |
+| 9   | `q_mul_2 == 1 checks`                                     | 6           | EccChip / utilities (halo2_gadgets)         |
+| 10  | `q_mul_3 == 1 checks`                                     | 4           | EccChip / utilities (halo2_gadgets)         |
+| 11  | `q_mul_1 == 1 checks`                                     | 1           | EccChip / utilities (halo2_gadgets)         |
+| 12  | `q_mul_2 == 1 checks`                                     | 6           | EccChip / utilities (halo2_gadgets)         |
+| 13  | `q_mul_3 == 1 checks`                                     | 4           | EccChip / utilities (halo2_gadgets)         |
+| 14  | `Decompose scalar for complete bits of variable-base mul` | 2           | EccChip / utilities (halo2_gadgets)         |
+| 15  | `overflow checks`                                         | 5           | EccChip / utilities (halo2_gadgets)         |
+| 16  | `LSB check`                                               | 3           | EccChip / utilities (halo2_gadgets)         |
+| 17  | `range check`                                             | 1           | EccChip / utilities (halo2_gadgets)         |
+| 18  | `Running sum coordinates check`                           | 3           | EccChip / utilities (halo2_gadgets)         |
+| 19  | `Full-width fixed-base scalar mul`                        | 4           | EccChip / utilities (halo2_gadgets)         |
+| 20  | `Short fixed-base mul gate`                               | 4           | EccChip / utilities (halo2_gadgets)         |
+| 21  | `Canonicity checks`                                       | 8           | EccChip / utilities (halo2_gadgets)         |
+| 22  | `full round`                                              | 3           | PoseidonChip (halo2_gadgets)                |
+| 23  | `partial rounds`                                          | 4           | PoseidonChip (halo2_gadgets)                |
+| 24  | `pad-and-add`                                             | 3           | PoseidonChip (halo2_gadgets)                |
+| 25  | `Initial y_Q`                                             | 1           | SinsemillaChip (halo2_gadgets)              |
+| 26  | `Sinsemilla gate`                                         | 2           | SinsemillaChip (halo2_gadgets)              |
+| 27  | `a' = b ⋅ swap + a ⋅ (1-swap)`                            | 3           | MerkleChip (halo2_gadgets)                  |
+| 28  | `Decomposition check`                                     | 4           | MerkleChip (halo2_gadgets)                  |
+| 29  | `Initial y_Q`                                             | 1           | SinsemillaChip (halo2_gadgets)              |
+| 30  | `Sinsemilla gate`                                         | 2           | SinsemillaChip (halo2_gadgets)              |
+| 31  | `a' = b ⋅ swap + a ⋅ (1-swap)`                            | 3           | MerkleChip (halo2_gadgets)                  |
+| 32  | `Decomposition check`                                     | 4           | MerkleChip (halo2_gadgets)                  |
+| 33  | `CommitIvk canonicity check`                              | 14          | CommitIvkChip (src/circuit/commit_ivk.rs)   |
+| 34  | `NoteCommit MessagePiece b`                               | 3           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 35  | `NoteCommit MessagePiece d`                               | 3           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 36  | `NoteCommit MessagePiece e`                               | 1           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 37  | `NoteCommit MessagePiece g`                               | 2           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 38  | `NoteCommit MessagePiece h`                               | 2           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 39  | `NoteCommit input g_d`                                    | 5           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 40  | `NoteCommit input pk_d`                                   | 4           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 41  | `NoteCommit input value`                                  | 1           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 42  | `NoteCommit input rho`                                    | 4           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 43  | `NoteCommit input psi`                                    | 5           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 44  | `y coordinate checks`                                     | 7           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 45  | `NoteCommit MessagePiece b`                               | 3           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 46  | `NoteCommit MessagePiece d`                               | 3           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 47  | `NoteCommit MessagePiece e`                               | 1           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 48  | `NoteCommit MessagePiece g`                               | 2           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 49  | `NoteCommit MessagePiece h`                               | 2           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 50  | `NoteCommit input g_d`                                    | 5           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 51  | `NoteCommit input pk_d`                                   | 4           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 52  | `NoteCommit input value`                                  | 1           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 53  | `NoteCommit input rho`                                    | 4           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 54  | `NoteCommit input psi`                                    | 5           | NoteCommitChip (src/circuit/note_commit.rs) |
+| 55  | `y coordinate checks`                                     | 7           | NoteCommitChip (src/circuit/note_commit.rs) |
 
-## Group 1 (envelope column $F_{16}$, 2 polynomials)
+## Gates by chip
 
-### Polynomial 87 (original index 87)
+- **Action (src/circuit.rs)**: gates 1
+- **AddChip (src/circuit/gadget/add_chip.rs)**: gates 2
+- **CommitIvkChip (src/circuit/commit_ivk.rs)**: gates 33
+- **EccChip / utilities (halo2_gadgets)**: gates 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21
+- **MerkleChip (halo2_gadgets)**: gates 27, 28, 31, 32
+- **NoteCommitChip (src/circuit/note_commit.rs)**: gates 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55
+- **PoseidonChip (halo2_gadgets)**: gates 22, 23, 24
+- **SinsemillaChip (halo2_gadgets)**: gates 25, 26, 29, 30
 
-$$
-\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{0}^{(+1)} + \left(A_{3}\right) \cdot \left(A_{3}\right) + -\left(A_{0}\right) + -\left(A_{1}\right) + A_{0}\right) = 0
-$$
+## Gate 1. `Orchard circuit checks`
 
-### Polynomial 88 (original index 88)
+_Source: Action (src/circuit.rs). 4 constraints._
 
-$$
-\left(\mathtt{0x4} \cdot \left(A_{4}\right)\right) \cdot \left(A_{0} + -\left(A_{0}^{(+1)}\right)\right) + -\left(\mathtt{0x2} \cdot \left(\left(A_{3} + A_{4}\right) \cdot \left(A_{0} + -\left(\left(A_{3}\right) \cdot \left(A_{3}\right) + -\left(A_{0}\right) + -\left(A_{1}\right)\right)\right)\right) + \left(\mathtt{0x2} + -\left(\left(F_{12}\right) \cdot \left(F_{12} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(\left(A_{3}^{(+1)} + A_{4}^{(+1)}\right) \cdot \left(A_{0}^{(+1)} + -\left(\left(A_{3}^{(+1)}\right) \cdot \left(A_{3}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right) + -\left(A_{1}^{(+1)}\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(\left(F_{12}\right) \cdot \left(F_{12} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(A_{3}^{(+1)}\right)\right) = 0
-$$
-
-## Group 2 (envelope column $F_{17}$, 2 polynomials)
-
-### Polynomial 97 (original index 97)
-
-$$
-\left(A_{9}\right) \cdot \left(A_{9}\right) + -\left(A_{5}^{(+1)} + \left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{5}\right) + -\left(A_{6}\right) + A_{5}\right) = 0
-$$
-
-### Polynomial 98 (original index 98)
-
-$$
-\left(\mathtt{0x4} \cdot \left(A_{9}\right)\right) \cdot \left(A_{5} + -\left(A_{5}^{(+1)}\right)\right) + -\left(\mathtt{0x2} \cdot \left(\left(A_{8} + A_{9}\right) \cdot \left(A_{5} + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{5}\right) + -\left(A_{6}\right)\right)\right)\right) + \left(\mathtt{0x2} + -\left(\left(F_{13}\right) \cdot \left(F_{13} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(\left(A_{8}^{(+1)} + A_{9}^{(+1)}\right) \cdot \left(A_{5}^{(+1)} + -\left(\left(A_{8}^{(+1)}\right) \cdot \left(A_{8}^{(+1)}\right) + -\left(A_{5}^{(+1)}\right) + -\left(A_{6}^{(+1)}\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(\left(F_{13}\right) \cdot \left(F_{13} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(A_{8}^{(+1)}\right)\right) = 0
-$$
-
-## Group 3 (envelope column $F_{18}$, 17 polynomials)
-
-### Polynomial 1 (original index 1)
+### `v_old - v_new = magnitude * sign` (selector $q_{0}$)
 
 $$
 A_{0} + -\left(A_{1}\right) + -\left(\left(A_{2}\right) \cdot \left(A_{3}\right)\right) = 0
 $$
 
-### Polynomial 2 (original index 2)
+### `Either v_old = 0, or root = anchor` (selector $q_{0}$)
 
 $$
 \left(A_{0}\right) \cdot \left(A_{4} + -\left(A_{5}\right)\right) = 0
 $$
 
-### Polynomial 3 (original index 3)
+### `v_old = 0 or enable_spends = 1` (selector $q_{0}$)
 
 $$
 \left(A_{0}\right) \cdot \left(\mathtt{0x1} + -\left(A_{6}\right)\right) = 0
 $$
 
-### Polynomial 4 (original index 4)
+### `v_new = 0 or enable_outputs = 1` (selector $q_{0}$)
 
 $$
 \left(A_{1}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right) = 0
 $$
 
-### Polynomial 5 (original index 5)
+## Gate 2. `Field element addition: c = a + b`
+
+_Source: AddChip (src/circuit/gadget/add_chip.rs). 1 constraint._
+
+### `constraint 1` (selector $q_{1}$)
 
 $$
 A_{7} + A_{8} + -\left(A_{6}\right) = 0
 $$
 
-### Polynomial 6 (original index 6)
+## Gate 3. `Short lookup bitshift`
+
+_Source: EccChip / utilities (halo2_gadgets). 1 constraint._
+
+### `constraint 1` (selector $q_{4}$)
 
 $$
 \left(\mathtt{0x400} \cdot \left(A_{9}^{(-1)}\right)\right) \cdot \left(A_{9}^{(+1)}\right) + -\left(A_{9}\right) = 0
 $$
 
-### Polynomial 24 (original index 24)
+## Gate 4. `witness point`
+
+_Source: EccChip / utilities (halo2_gadgets). 2 constraints._
+
+### `x == 0 v on_curve`
 
 $$
-A_{4} + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4}^{(+1)} + A_{5}^{(+1)}\right) \cdot \left(A_{3}^{(+1)} + -\left(\left(A_{4}^{(+1)}\right) \cdot \left(A_{4}^{(+1)}\right) + -\left(A_{3}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right)\right)\right)\right)\right) = 0
+\left(\left(q_{5}\right) \cdot \left(A_{0}\right)\right) \cdot \left(\left(A_{1}\right) \cdot \left(A_{1}\right) + -\left(\left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right) \cdot \left(A_{0}\right)\right) + -\left(\mathtt{0x5}\right)\right) = 0
 $$
 
-### Polynomial 25 (original index 25)
+### `y == 0 v on_curve`
 
 $$
-A_{0} + -\left(A_{0}^{(+1)}\right) = 0
+\left(\left(q_{5}\right) \cdot \left(A_{1}\right)\right) \cdot \left(\left(A_{1}\right) \cdot \left(A_{1}\right) + -\left(\left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right) \cdot \left(A_{0}\right)\right) + -\left(\mathtt{0x5}\right)\right) = 0
 $$
 
-### Polynomial 26 (original index 26)
+## Gate 5. `witness non-identity point`
 
-$$
-A_{1} + -\left(A_{1}^{(+1)}\right) = 0
-$$
+_Source: EccChip / utilities (halo2_gadgets). 1 constraint._
 
-### Polynomial 27 (original index 27)
-
-$$
-\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right)\right) = 0
-$$
-
-### Polynomial 28 (original index 28)
-
-$$
-\left(A_{4}\right) \cdot \left(A_{3} + -\left(A_{0}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) + -\left(\mathtt{0x1}\right)\right) \cdot \left(A_{1}\right) = 0
-$$
-
-### Polynomial 29 (original index 29)
-
-$$
-\left(A_{5}\right) \cdot \left(A_{5}\right) + -\left(A_{3}^{(+1)}\right) + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right) + -\left(A_{3}\right) = 0
-$$
-
-### Polynomial 30 (original index 30)
-
-$$
-\left(A_{5}\right) \cdot \left(A_{3} + -\left(A_{3}^{(+1)}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4}^{(+1)} + A_{5}^{(+1)}\right) \cdot \left(A_{3}^{(+1)} + -\left(\left(A_{4}^{(+1)}\right) \cdot \left(A_{4}^{(+1)}\right) + -\left(A_{3}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right)\right)\right)\right)\right) = 0
-$$
-
-### Polynomial 31 (original index 31)
-
-$$
-\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right)\right) = 0
-$$
-
-### Polynomial 32 (original index 32)
-
-$$
-\left(A_{4}\right) \cdot \left(A_{3} + -\left(A_{0}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) + -\left(\mathtt{0x1}\right)\right) \cdot \left(A_{1}\right) = 0
-$$
-
-### Polynomial 33 (original index 33)
-
-$$
-\left(A_{5}\right) \cdot \left(A_{5}\right) + -\left(A_{3}^{(+1)}\right) + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right) + -\left(A_{3}\right) = 0
-$$
-
-### Polynomial 34 (original index 34)
-
-$$
-\left(A_{5}\right) \cdot \left(A_{3} + -\left(A_{3}^{(+1)}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + -\left(A_{4}^{(+1)}\right) = 0
-$$
-
-## Group 4 (envelope column $F_{19}$, 17 polynomials)
-
-### Polynomial 7 (original index 7)
+### `on_curve` (selector $q_{6}$)
 
 $$
 \left(A_{1}\right) \cdot \left(A_{1}\right) + -\left(\left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right) \cdot \left(A_{0}\right)\right) + -\left(\mathtt{0x5}\right) = 0
 $$
 
-### Polynomial 8 (original index 8)
+## Gate 6. `incomplete addition`
 
-$$
-\left(A_{1}\right) \cdot \left(A_{1}\right) + -\left(\left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right) \cdot \left(A_{0}\right)\right) + -\left(\mathtt{0x5}\right) = 0
-$$
+_Source: EccChip / utilities (halo2_gadgets). 2 constraints._
 
-### Polynomial 9 (original index 9)
-
-$$
-\left(A_{1}\right) \cdot \left(A_{1}\right) + -\left(\left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right) \cdot \left(A_{0}\right)\right) + -\left(\mathtt{0x5}\right) = 0
-$$
-
-### Polynomial 10 (original index 10)
+### `x_r` (selector $q_{7}$)
 
 $$
 \left(\left(A_{2}^{(+1)} + A_{2} + A_{0}\right) \cdot \left(A_{0} + -\left(A_{2}\right)\right)\right) \cdot \left(A_{0} + -\left(A_{2}\right)\right) + -\left(\left(A_{1} + -\left(A_{3}\right)\right) \cdot \left(A_{1} + -\left(A_{3}\right)\right)\right) = 0
 $$
 
-### Polynomial 11 (original index 11)
+### `y_r` (selector $q_{7}$)
 
 $$
 \left(A_{3}^{(+1)} + A_{3}\right) \cdot \left(A_{0} + -\left(A_{2}\right)\right) + -\left(\left(A_{1} + -\left(A_{3}\right)\right) \cdot \left(A_{2} + -\left(A_{2}^{(+1)}\right)\right)\right) = 0
 $$
 
-### Polynomial 12 (original index 12)
+## Gate 7. `complete addition`
+
+_Source: EccChip / utilities (halo2_gadgets). 12 constraints._
+
+### `1` (selector $q_{8}$)
 
 $$
 \left(A_{2} + -\left(A_{0}\right)\right) \cdot \left(\left(A_{2} + -\left(A_{0}\right)\right) \cdot \left(A_{4}\right) + -\left(A_{3} + -\left(A_{1}\right)\right)\right) = 0
 $$
 
-### Polynomial 13 (original index 13)
+### `2` (selector $q_{8}$)
 
 $$
 \left(\mathtt{0x1} + -\left(\left(A_{2} + -\left(A_{0}\right)\right) \cdot \left(A_{5}\right)\right)\right) \cdot \left(\left(\left(\mathtt{0x2}\right) \cdot \left(A_{1}\right)\right) \cdot \left(A_{4}\right) + -\left(\left(\mathtt{0x3}\right) \cdot \left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 14 (original index 14)
+### `3a` (selector $q_{8}$)
 
 $$
 \left(\left(\left(A_{0}\right) \cdot \left(A_{2}\right)\right) \cdot \left(A_{2} + -\left(A_{0}\right)\right)\right) \cdot \left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{0}\right) + -\left(A_{2}\right) + -\left(A_{2}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 15 (original index 15)
+### `3b` (selector $q_{8}$)
 
 $$
 \left(\left(\left(A_{0}\right) \cdot \left(A_{2}\right)\right) \cdot \left(A_{2} + -\left(A_{0}\right)\right)\right) \cdot \left(\left(A_{4}\right) \cdot \left(A_{0} + -\left(A_{2}^{(+1)}\right)\right) + -\left(A_{1}\right) + -\left(A_{3}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 16 (original index 16)
+### `3c` (selector $q_{8}$)
 
 $$
 \left(\left(\left(A_{0}\right) \cdot \left(A_{2}\right)\right) \cdot \left(A_{3} + A_{1}\right)\right) \cdot \left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{0}\right) + -\left(A_{2}\right) + -\left(A_{2}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 17 (original index 17)
+### `3d` (selector $q_{8}$)
 
 $$
 \left(\left(\left(A_{0}\right) \cdot \left(A_{2}\right)\right) \cdot \left(A_{3} + A_{1}\right)\right) \cdot \left(\left(A_{4}\right) \cdot \left(A_{0} + -\left(A_{2}^{(+1)}\right)\right) + -\left(A_{1}\right) + -\left(A_{3}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 18 (original index 18)
+### `4a` (selector $q_{8}$)
 
 $$
 \left(\mathtt{0x1} + -\left(\left(A_{0}\right) \cdot \left(A_{6}\right)\right)\right) \cdot \left(A_{2}^{(+1)} + -\left(A_{2}\right)\right) = 0
 $$
 
-### Polynomial 19 (original index 19)
+### `4b` (selector $q_{8}$)
 
 $$
 \left(\mathtt{0x1} + -\left(\left(A_{0}\right) \cdot \left(A_{6}\right)\right)\right) \cdot \left(A_{3}^{(+1)} + -\left(A_{3}\right)\right) = 0
 $$
 
-### Polynomial 20 (original index 20)
+### `5a` (selector $q_{8}$)
 
 $$
 \left(\mathtt{0x1} + -\left(\left(A_{2}\right) \cdot \left(A_{7}\right)\right)\right) \cdot \left(A_{2}^{(+1)} + -\left(A_{0}\right)\right) = 0
 $$
 
-### Polynomial 21 (original index 21)
+### `5b` (selector $q_{8}$)
 
 $$
 \left(\mathtt{0x1} + -\left(\left(A_{2}\right) \cdot \left(A_{7}\right)\right)\right) \cdot \left(A_{3}^{(+1)} + -\left(A_{1}\right)\right) = 0
 $$
 
-### Polynomial 22 (original index 22)
+### `6a` (selector $q_{8}$)
 
 $$
 \left(\mathtt{0x1} + -\left(\left(A_{2} + -\left(A_{0}\right)\right) \cdot \left(A_{5}\right)\right) + -\left(\left(A_{3} + A_{1}\right) \cdot \left(A_{8}\right)\right)\right) \cdot \left(A_{2}^{(+1)}\right) = 0
 $$
 
-### Polynomial 23 (original index 23)
+### `6b` (selector $q_{8}$)
 
 $$
 \left(\mathtt{0x1} + -\left(\left(A_{2} + -\left(A_{0}\right)\right) \cdot \left(A_{5}\right)\right) + -\left(\left(A_{3} + A_{1}\right) \cdot \left(A_{8}\right)\right)\right) \cdot \left(A_{3}^{(+1)}\right) = 0
 $$
 
-## Group 5 (envelope column $F_{20}$, 18 polynomials)
+## Gate 8. `q_mul_1 == 1 checks`
 
-### Polynomial 35 (original index 35)
+_Source: EccChip / utilities (halo2_gadgets). 1 constraint._
+
+### `init y_a` (selector $q_{9}$)
 
 $$
-A_{8} + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{8}^{(+1)} + A_{2}^{(+1)}\right) \cdot \left(A_{7}^{(+1)} + -\left(\left(A_{8}^{(+1)}\right) \cdot \left(A_{8}^{(+1)}\right) + -\left(A_{7}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right)\right)\right)\right)\right) = 0
+A_{4} + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4}^{(+1)} + A_{5}^{(+1)}\right) \cdot \left(A_{3}^{(+1)} + -\left(\left(A_{4}^{(+1)}\right) \cdot \left(A_{4}^{(+1)}\right) + -\left(A_{3}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right)\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 36 (original index 36)
+## Gate 9. `q_mul_2 == 1 checks`
+
+_Source: EccChip / utilities (halo2_gadgets). 6 constraints._
+
+### `x_p_check` (selector $q_{10}$)
 
 $$
 A_{0} + -\left(A_{0}^{(+1)}\right) = 0
 $$
 
-### Polynomial 37 (original index 37)
+### `y_p_check` (selector $q_{10}$)
 
 $$
 A_{1} + -\left(A_{1}^{(+1)}\right) = 0
 $$
 
-### Polynomial 38 (original index 38)
+### `bool_check` (selector $q_{10}$)
+
+$$
+\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right)\right) = 0
+$$
+
+### `gradient_1` (selector $q_{10}$)
+
+$$
+\left(A_{4}\right) \cdot \left(A_{3} + -\left(A_{0}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) + -\left(\mathtt{0x1}\right)\right) \cdot \left(A_{1}\right) = 0
+$$
+
+### `secant_line` (selector $q_{10}$)
+
+$$
+\left(A_{5}\right) \cdot \left(A_{5}\right) + -\left(A_{3}^{(+1)}\right) + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right) + -\left(A_{3}\right) = 0
+$$
+
+### `gradient_2` (selector $q_{10}$)
+
+$$
+\left(A_{5}\right) \cdot \left(A_{3} + -\left(A_{3}^{(+1)}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4}^{(+1)} + A_{5}^{(+1)}\right) \cdot \left(A_{3}^{(+1)} + -\left(\left(A_{4}^{(+1)}\right) \cdot \left(A_{4}^{(+1)}\right) + -\left(A_{3}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right)\right)\right)\right)\right) = 0
+$$
+
+## Gate 10. `q_mul_3 == 1 checks`
+
+_Source: EccChip / utilities (halo2_gadgets). 4 constraints._
+
+### `bool_check` (selector $q_{11}$)
+
+$$
+\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right)\right) = 0
+$$
+
+### `gradient_1` (selector $q_{11}$)
+
+$$
+\left(A_{4}\right) \cdot \left(A_{3} + -\left(A_{0}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(A_{9} + -\left(\mathtt{0x2} \cdot \left(A_{9}^{(-1)}\right)\right)\right) + -\left(\mathtt{0x1}\right)\right) \cdot \left(A_{1}\right) = 0
+$$
+
+### `secant_line` (selector $q_{11}$)
+
+$$
+\left(A_{5}\right) \cdot \left(A_{5}\right) + -\left(A_{3}^{(+1)}\right) + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right) + -\left(A_{3}\right) = 0
+$$
+
+### `gradient_2` (selector $q_{11}$)
+
+$$
+\left(A_{5}\right) \cdot \left(A_{3} + -\left(A_{3}^{(+1)}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{4} + A_{5}\right) \cdot \left(A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{3}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + -\left(A_{4}^{(+1)}\right) = 0
+$$
+
+## Gate 11. `q_mul_1 == 1 checks`
+
+_Source: EccChip / utilities (halo2_gadgets). 1 constraint._
+
+### `init y_a` (selector $q_{12}$)
+
+$$
+A_{8} + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{8}^{(+1)} + A_{2}^{(+1)}\right) \cdot \left(A_{7}^{(+1)} + -\left(\left(A_{8}^{(+1)}\right) \cdot \left(A_{8}^{(+1)}\right) + -\left(A_{7}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right)\right)\right)\right)\right) = 0
+$$
+
+## Gate 12. `q_mul_2 == 1 checks`
+
+_Source: EccChip / utilities (halo2_gadgets). 6 constraints._
+
+### `x_p_check` (selector $q_{13}$)
+
+$$
+A_{0} + -\left(A_{0}^{(+1)}\right) = 0
+$$
+
+### `y_p_check` (selector $q_{13}$)
+
+$$
+A_{1} + -\left(A_{1}^{(+1)}\right) = 0
+$$
+
+### `bool_check` (selector $q_{13}$)
 
 $$
 \left(A_{6} + -\left(\mathtt{0x2} \cdot \left(A_{6}^{(-1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{6} + -\left(\mathtt{0x2} \cdot \left(A_{6}^{(-1)}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 39 (original index 39)
+### `gradient_1` (selector $q_{13}$)
 
 $$
 \left(A_{8}\right) \cdot \left(A_{7} + -\left(A_{0}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{8} + A_{2}\right) \cdot \left(A_{7} + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{7}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(A_{6} + -\left(\mathtt{0x2} \cdot \left(A_{6}^{(-1)}\right)\right)\right) + -\left(\mathtt{0x1}\right)\right) \cdot \left(A_{1}\right) = 0
 $$
 
-### Polynomial 40 (original index 40)
+### `secant_line` (selector $q_{13}$)
 
 $$
 \left(A_{2}\right) \cdot \left(A_{2}\right) + -\left(A_{7}^{(+1)}\right) + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{7}\right) + -\left(A_{0}\right)\right) + -\left(A_{7}\right) = 0
 $$
 
-### Polynomial 41 (original index 41)
+### `gradient_2` (selector $q_{13}$)
 
 $$
 \left(A_{2}\right) \cdot \left(A_{7} + -\left(A_{7}^{(+1)}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{8} + A_{2}\right) \cdot \left(A_{7} + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{7}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{8}^{(+1)} + A_{2}^{(+1)}\right) \cdot \left(A_{7}^{(+1)} + -\left(\left(A_{8}^{(+1)}\right) \cdot \left(A_{8}^{(+1)}\right) + -\left(A_{7}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right)\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 42 (original index 42)
+## Gate 13. `q_mul_3 == 1 checks`
+
+_Source: EccChip / utilities (halo2_gadgets). 4 constraints._
+
+### `bool_check` (selector $q_{14}$)
 
 $$
 \left(A_{6} + -\left(\mathtt{0x2} \cdot \left(A_{6}^{(-1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{6} + -\left(\mathtt{0x2} \cdot \left(A_{6}^{(-1)}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 43 (original index 43)
+### `gradient_1` (selector $q_{14}$)
 
 $$
 \left(A_{8}\right) \cdot \left(A_{7} + -\left(A_{0}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{8} + A_{2}\right) \cdot \left(A_{7} + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{7}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(A_{6} + -\left(\mathtt{0x2} \cdot \left(A_{6}^{(-1)}\right)\right)\right) + -\left(\mathtt{0x1}\right)\right) \cdot \left(A_{1}\right) = 0
 $$
 
-### Polynomial 44 (original index 44)
+### `secant_line` (selector $q_{14}$)
 
 $$
 \left(A_{2}\right) \cdot \left(A_{2}\right) + -\left(A_{7}^{(+1)}\right) + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{7}\right) + -\left(A_{0}\right)\right) + -\left(A_{7}\right) = 0
 $$
 
-### Polynomial 45 (original index 45)
+### `gradient_2` (selector $q_{14}$)
 
 $$
 \left(A_{2}\right) \cdot \left(A_{7} + -\left(A_{7}^{(+1)}\right)\right) + -\left(\mathtt{0x200000\ldots} \cdot \left(\left(A_{8} + A_{2}\right) \cdot \left(A_{7} + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{7}\right) + -\left(A_{0}\right)\right)\right)\right)\right) + -\left(A_{8}^{(+1)}\right) = 0
 $$
 
-### Polynomial 46 (original index 46)
+## Gate 14. `Decompose scalar for complete bits of variable-base mul`
+
+_Source: EccChip / utilities (halo2_gadgets). 2 constraints._
+
+### `bool_check` (selector $q_{15}$)
 
 $$
 \left(A_{9}^{(+1)} + -\left(\left(\mathtt{0x2}\right) \cdot \left(A_{9}^{(-1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{9}^{(+1)} + -\left(\left(\mathtt{0x2}\right) \cdot \left(A_{9}^{(-1)}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 47 (original index 47)
+### `y_switch` (selector $q_{15}$)
 
 $$
 \left(A_{9}^{(+1)} + -\left(\left(\mathtt{0x2}\right) \cdot \left(A_{9}^{(-1)}\right)\right)\right) \cdot \left(A_{9} + -\left(A_{1}^{(-1)}\right)\right) + \left(\mathtt{0x1} + -\left(A_{9}^{(+1)} + -\left(\left(\mathtt{0x2}\right) \cdot \left(A_{9}^{(-1)}\right)\right)\right)\right) \cdot \left(A_{9} + A_{1}^{(-1)}\right) = 0
 $$
 
-### Polynomial 48 (original index 48)
+## Gate 15. `overflow checks`
+
+_Source: EccChip / utilities (halo2_gadgets). 5 constraints._
+
+### `s_check` (selector $q_{16}$)
 
 $$
 A_{8} + -\left(A_{7} + \left(A_{7}^{(-1)}\right) \cdot \left(\left(\mathtt{0x100000\ldots}\right) \cdot \left(\mathtt{0x40}\right)\right)\right) = 0
 $$
 
-### Polynomial 49 (original index 49)
+### `recovery` (selector $q_{16}$)
 
 $$
 A_{6}^{(-1)} + -\left(A_{7}\right) + -\left(\mathtt{0x224698\ldots}\right) = 0
 $$
 
-### Polynomial 50 (original index 50)
+### `lo_zero` (selector $q_{16}$)
 
 $$
 \left(A_{7}^{(-1)}\right) \cdot \left(A_{6} + -\left(\mathtt{0x100000\ldots}\right)\right) = 0
 $$
 
-### Polynomial 51 (original index 51)
+### `s_minus_lo_130_check` (selector $q_{16}$)
 
 $$
 \left(A_{7}^{(-1)}\right) \cdot \left(A_{7}^{(+1)}\right) = 0
 $$
 
-### Polynomial 52 (original index 52)
+### `canonicity` (selector $q_{16}$)
 
 $$
 \left(\left(\mathtt{0x1} + -\left(A_{7}^{(-1)}\right)\right) \cdot \left(\mathtt{0x1} + -\left(\left(A_{6}\right) \cdot \left(A_{6}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{7}^{(+1)}\right) = 0
 $$
 
-## Group 6 (envelope column $F_{21}$, 18 polynomials)
+## Gate 16. `LSB check`
 
-### Polynomial 53 (original index 53)
+_Source: EccChip / utilities (halo2_gadgets). 3 constraints._
+
+### `bool_check` (selector $q_{17}$)
 
 $$
 \left(A_{9}^{(+1)} + -\left(\mathtt{0x2} \cdot \left(A_{9}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{9}^{(+1)} + -\left(\mathtt{0x2} \cdot \left(A_{9}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 54 (original index 54)
+### `lsb_x` (selector $q_{17}$)
 
 $$
 \left(A_{9}^{(+1)} + -\left(\mathtt{0x2} \cdot \left(A_{9}\right)\right)\right) \cdot \left(A_{0}\right) + \left(\mathtt{0x1} + -\left(A_{9}^{(+1)} + -\left(\mathtt{0x2} \cdot \left(A_{9}\right)\right)\right)\right) \cdot \left(A_{0} + -\left(A_{0}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 55 (original index 55)
+### `lsb_y` (selector $q_{17}$)
 
 $$
 \left(A_{9}^{(+1)} + -\left(\mathtt{0x2} \cdot \left(A_{9}\right)\right)\right) \cdot \left(A_{1}\right) + \left(\mathtt{0x1} + -\left(A_{9}^{(+1)} + -\left(\mathtt{0x2} \cdot \left(A_{9}\right)\right)\right)\right) \cdot \left(A_{1} + A_{1}^{(+1)}\right) = 0
 $$
 
-### Polynomial 64 (original index 64)
+## Gate 17. `range check`
 
-$$
-\left(A_{5}\right) \cdot \left(\mathtt{0x1} + -\left(A_{5}\right)\right) = 0
-$$
+_Source: EccChip / utilities (halo2_gadgets). 1 constraint._
 
-### Polynomial 65 (original index 65)
-
-$$
-\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(\mathtt{0x1}\right) = 0
-$$
-
-### Polynomial 66 (original index 66)
-
-$$
-\left(A_{1} + -\left(A_{3}\right)\right) \cdot \left(A_{1} + A_{3}\right) = 0
-$$
-
-### Polynomial 67 (original index 67)
-
-$$
-\left(A_{4}\right) \cdot \left(A_{1}\right) + -\left(A_{3}\right) = 0
-$$
-
-### Polynomial 68 (original index 68)
-
-$$
-\left(A_{8}\right) \cdot \left(A_{7}\right) = 0
-$$
-
-### Polynomial 69 (original index 69)
-
-$$
-\left(A_{8}\right) \cdot \left(A_{7}^{(+1)} + -\left(\left(A_{8}^{(-1)}\right) \cdot \left(\mathtt{0x100000\ldots}\right)\right)\right) = 0
-$$
-
-### Polynomial 70 (original index 70)
-
-$$
-\left(A_{8}\right) \cdot \left(\left(A_{8}^{(+1)} + -\left(\mathtt{0x8} \cdot \left(A_{7}^{(+1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}^{(+1)} + -\left(\mathtt{0x8} \cdot \left(A_{7}^{(+1)}\right)\right)\right)\right)\right) = 0
-$$
-
-### Polynomial 71 (original index 71)
-
-$$
-\left(A_{8}\right) \cdot \left(A_{6}^{(+1)}\right) = 0
-$$
-
-### Polynomial 72 (original index 72)
-
-$$
-\left(\left(\left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right)\right) \cdot \left(\mathtt{0x2} + -\left(A_{7}\right)\right)\right) \cdot \left(\mathtt{0x3} + -\left(A_{7}\right)\right) = 0
-$$
-
-### Polynomial 73 (original index 73)
-
-$$
-\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
-$$
-
-### Polynomial 74 (original index 74)
-
-$$
-A_{8}^{(-1)} + -\left(A_{7} + \mathtt{0x4} \cdot \left(A_{8}\right)\right) = 0
-$$
-
-### Polynomial 75 (original index 75)
-
-$$
-A_{6} + -\left(A_{6}^{(-1)} + -\left(\mathtt{0x100000\ldots} \cdot \left(A_{8}^{(-1)}\right)\right) + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right)\right) = 0
-$$
-
-### Polynomial 76 (original index 76)
-
-$$
-\mathtt{0xab5e5b\ldots} \cdot \left(\left(\left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right) \cdot \left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right)\right) \cdot \left(A_{6} + F_{5}\right)\right) + \mathtt{0x319166\ldots} \cdot \left(\left(\left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right) \cdot \left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right)\right) \cdot \left(A_{7} + F_{6}\right)\right) + \mathtt{0x7c045d\ldots} \cdot \left(\left(\left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right) \cdot \left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right)\right) \cdot \left(A_{8} + F_{7}\right)\right) + -\left(A_{6}^{(+1)}\right) = 0
-$$
-
-### Polynomial 77 (original index 77)
-
-$$
-\mathtt{0x233162\ldots} \cdot \left(\left(\left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right) \cdot \left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right)\right) \cdot \left(A_{6} + F_{5}\right)\right) + \mathtt{0x25cae2\ldots} \cdot \left(\left(\left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right) \cdot \left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right)\right) \cdot \left(A_{7} + F_{6}\right)\right) + \mathtt{0x22f5b5\ldots} \cdot \left(\left(\left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right) \cdot \left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right)\right) \cdot \left(A_{8} + F_{7}\right)\right) + -\left(A_{7}^{(+1)}\right) = 0
-$$
-
-### Polynomial 78 (original index 78)
-
-$$
-\mathtt{0x2e29dd\ldots} \cdot \left(\left(\left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right) \cdot \left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right)\right) \cdot \left(A_{6} + F_{5}\right)\right) + \mathtt{0x1d1aab\ldots} \cdot \left(\left(\left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right) \cdot \left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right)\right) \cdot \left(A_{7} + F_{6}\right)\right) + \mathtt{0x3bf763\ldots} \cdot \left(\left(\left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right) \cdot \left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right)\right) \cdot \left(A_{8} + F_{7}\right)\right) + -\left(A_{8}^{(+1)}\right) = 0
-$$
-
-## Group 7 (envelope column $F_{22}$, 4 polynomials)
-
-### Polynomial 56 (original index 56)
+### `constraint 1` (selector $q_{18}$)
 
 $$
 \left(\left(\left(\left(\left(\left(\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right)\right) \cdot \left(\mathtt{0x2} + -\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right)\right) \cdot \left(\mathtt{0x3} + -\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right)\right) \cdot \left(\mathtt{0x4} + -\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right)\right) \cdot \left(\mathtt{0x5} + -\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right)\right) \cdot \left(\mathtt{0x6} + -\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right)\right) \cdot \left(\mathtt{0x7} + -\left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 57 (original index 57)
+## Gate 18. `Running sum coordinates check`
+
+_Source: EccChip / utilities (halo2_gadgets). 3 constraints._
+
+### `check x` (selector $q_{18}$)
 
 $$
 0 + \left(\mathtt{0x1}\right) \cdot \left(F_{3}\right) + \left(\left(\mathtt{0x1}\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(F_{4}\right) + \left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(F_{5}\right) + \left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(F_{6}\right) + \left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(F_{7}\right) + \left(\left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(F_{8}\right) + \left(\left(\left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(F_{9}\right) + \left(\left(\left(\left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(A_{4} + -\left(\mathtt{0x8} \cdot \left(A_{4}^{(+1)}\right)\right)\right)\right) \cdot \left(F_{10}\right) + -\left(A_{0}\right) = 0
 $$
 
-### Polynomial 58 (original index 58)
+### `check y` (selector $q_{18}$)
 
 $$
 \left(A_{5}\right) \cdot \left(A_{5}\right) + -\left(A_{1}\right) + -\left(F_{11}\right) = 0
 $$
 
-### Polynomial 59 (original index 59)
+### `on-curve` (selector $q_{18}$)
 
 $$
 \left(A_{1}\right) \cdot \left(A_{1}\right) + -\left(\left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right) \cdot \left(A_{0}\right)\right) + -\left(\mathtt{0x5}\right) = 0
 $$
 
-## Group 8 (envelope column $F_{23}$, 4 polynomials)
+## Gate 19. `Full-width fixed-base scalar mul`
 
-### Polynomial 60 (original index 60)
+_Source: EccChip / utilities (halo2_gadgets). 4 constraints._
+
+### `check x` (selector $q_{19}$)
 
 $$
 0 + \left(\mathtt{0x1}\right) \cdot \left(F_{3}\right) + \left(\left(\mathtt{0x1}\right) \cdot \left(A_{4}\right)\right) \cdot \left(F_{4}\right) + \left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(F_{5}\right) + \left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(F_{6}\right) + \left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(F_{7}\right) + \left(\left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(F_{8}\right) + \left(\left(\left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(F_{9}\right) + \left(\left(\left(\left(\left(\left(\left(\left(\mathtt{0x1}\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(A_{4}\right)\right) \cdot \left(F_{10}\right) + -\left(A_{0}\right) = 0
 $$
 
-### Polynomial 61 (original index 61)
+### `check y` (selector $q_{19}$)
 
 $$
 \left(A_{5}\right) \cdot \left(A_{5}\right) + -\left(A_{1}\right) + -\left(F_{11}\right) = 0
 $$
 
-### Polynomial 62 (original index 62)
+### `on-curve` (selector $q_{19}$)
 
 $$
 \left(A_{1}\right) \cdot \left(A_{1}\right) + -\left(\left(\left(A_{0}\right) \cdot \left(A_{0}\right)\right) \cdot \left(A_{0}\right)\right) + -\left(\mathtt{0x5}\right) = 0
 $$
 
-### Polynomial 63 (original index 63)
+### `window range check` (selector $q_{19}$)
 
 $$
 \left(\left(\left(\left(\left(\left(\left(A_{4}\right) \cdot \left(\mathtt{0x1} + -\left(A_{4}\right)\right)\right) \cdot \left(\mathtt{0x2} + -\left(A_{4}\right)\right)\right) \cdot \left(\mathtt{0x3} + -\left(A_{4}\right)\right)\right) \cdot \left(\mathtt{0x4} + -\left(A_{4}\right)\right)\right) \cdot \left(\mathtt{0x5} + -\left(A_{4}\right)\right)\right) \cdot \left(\mathtt{0x6} + -\left(A_{4}\right)\right)\right) \cdot \left(\mathtt{0x7} + -\left(A_{4}\right)\right) = 0
 $$
 
-## Group 9 (envelope column $F_{24}$, 11 polynomials)
+## Gate 20. `Short fixed-base mul gate`
 
-### Polynomial 79 (original index 79)
+_Source: EccChip / utilities (halo2_gadgets). 4 constraints._
+
+### `last_window_check` (selector $q_{20}$)
+
+$$
+\left(A_{5}\right) \cdot \left(\mathtt{0x1} + -\left(A_{5}\right)\right) = 0
+$$
+
+### `sign_check` (selector $q_{20}$)
+
+$$
+\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(\mathtt{0x1}\right) = 0
+$$
+
+### `y_check` (selector $q_{20}$)
+
+$$
+\left(A_{1} + -\left(A_{3}\right)\right) \cdot \left(A_{1} + A_{3}\right) = 0
+$$
+
+### `negation_check` (selector $q_{20}$)
+
+$$
+\left(A_{4}\right) \cdot \left(A_{1}\right) + -\left(A_{3}\right) = 0
+$$
+
+## Gate 21. `Canonicity checks`
+
+_Source: EccChip / utilities (halo2_gadgets). 8 constraints._
+
+### `MSB = 1 => alpha_1 = 0` (selector $q_{21}$)
+
+$$
+\left(A_{8}\right) \cdot \left(A_{7}\right) = 0
+$$
+
+### `MSB = 1 => alpha_0_hi_120 = 0` (selector $q_{21}$)
+
+$$
+\left(A_{8}\right) \cdot \left(A_{7}^{(+1)} + -\left(\left(A_{8}^{(-1)}\right) \cdot \left(\mathtt{0x100000\ldots}\right)\right)\right) = 0
+$$
+
+### `MSB = 1 => a_43 = 0 or 1` (selector $q_{21}$)
+
+$$
+\left(A_{8}\right) \cdot \left(\left(A_{8}^{(+1)} + -\left(\mathtt{0x8} \cdot \left(A_{7}^{(+1)}\right)\right)\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}^{(+1)} + -\left(\mathtt{0x8} \cdot \left(A_{7}^{(+1)}\right)\right)\right)\right)\right) = 0
+$$
+
+### `MSB = 1 => z_13_alpha_0_prime = 0` (selector $q_{21}$)
+
+$$
+\left(A_{8}\right) \cdot \left(A_{6}^{(+1)}\right) = 0
+$$
+
+### `alpha_1_range_check` (selector $q_{21}$)
+
+$$
+\left(\left(\left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right)\right) \cdot \left(\mathtt{0x2} + -\left(A_{7}\right)\right)\right) \cdot \left(\mathtt{0x3} + -\left(A_{7}\right)\right) = 0
+$$
+
+### `alpha_2_range_check` (selector $q_{21}$)
+
+$$
+\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
+$$
+
+### `z_84_alpha_check` (selector $q_{21}$)
+
+$$
+A_{8}^{(-1)} + -\left(A_{7} + \mathtt{0x4} \cdot \left(A_{8}\right)\right) = 0
+$$
+
+### `alpha_0_prime check` (selector $q_{21}$)
+
+$$
+A_{6} + -\left(A_{6}^{(-1)} + -\left(\mathtt{0x100000\ldots} \cdot \left(A_{8}^{(-1)}\right)\right) + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right)\right) = 0
+$$
+
+## Gate 22. `full round`
+
+_Source: PoseidonChip (halo2_gadgets). 3 constraints._
+
+### `constraint 1` (selector $q_{22}$)
+
+$$
+\mathtt{0xab5e5b\ldots} \cdot \left(\left(\left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right) \cdot \left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right)\right) \cdot \left(A_{6} + F_{5}\right)\right) + \mathtt{0x319166\ldots} \cdot \left(\left(\left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right) \cdot \left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right)\right) \cdot \left(A_{7} + F_{6}\right)\right) + \mathtt{0x7c045d\ldots} \cdot \left(\left(\left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right) \cdot \left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right)\right) \cdot \left(A_{8} + F_{7}\right)\right) + -\left(A_{6}^{(+1)}\right) = 0
+$$
+
+### `constraint 2` (selector $q_{22}$)
+
+$$
+\mathtt{0x233162\ldots} \cdot \left(\left(\left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right) \cdot \left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right)\right) \cdot \left(A_{6} + F_{5}\right)\right) + \mathtt{0x25cae2\ldots} \cdot \left(\left(\left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right) \cdot \left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right)\right) \cdot \left(A_{7} + F_{6}\right)\right) + \mathtt{0x22f5b5\ldots} \cdot \left(\left(\left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right) \cdot \left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right)\right) \cdot \left(A_{8} + F_{7}\right)\right) + -\left(A_{7}^{(+1)}\right) = 0
+$$
+
+### `constraint 3` (selector $q_{22}$)
+
+$$
+\mathtt{0x2e29dd\ldots} \cdot \left(\left(\left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right) \cdot \left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right)\right) \cdot \left(A_{6} + F_{5}\right)\right) + \mathtt{0x1d1aab\ldots} \cdot \left(\left(\left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right) \cdot \left(\left(A_{7} + F_{6}\right) \cdot \left(A_{7} + F_{6}\right)\right)\right) \cdot \left(A_{7} + F_{6}\right)\right) + \mathtt{0x3bf763\ldots} \cdot \left(\left(\left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right) \cdot \left(\left(A_{8} + F_{7}\right) \cdot \left(A_{8} + F_{7}\right)\right)\right) \cdot \left(A_{8} + F_{7}\right)\right) + -\left(A_{8}^{(+1)}\right) = 0
+$$
+
+## Gate 23. `partial rounds`
+
+_Source: PoseidonChip (halo2_gadgets). 4 constraints._
+
+### `constraint 1` (selector $q_{23}$)
 
 $$
 \left(\left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right) \cdot \left(\left(A_{6} + F_{5}\right) \cdot \left(A_{6} + F_{5}\right)\right)\right) \cdot \left(A_{6} + F_{5}\right) + -\left(A_{5}\right) = 0
 $$
 
-### Polynomial 80 (original index 80)
+### `constraint 2` (selector $q_{23}$)
 
 $$
 \left(\left(\left(\mathtt{0xab5e5b\ldots} \cdot \left(A_{5}\right) + \mathtt{0x319166\ldots} \cdot \left(A_{7} + F_{6}\right) + \mathtt{0x7c045d\ldots} \cdot \left(A_{8} + F_{7}\right) + F_{8}\right) \cdot \left(\mathtt{0xab5e5b\ldots} \cdot \left(A_{5}\right) + \mathtt{0x319166\ldots} \cdot \left(A_{7} + F_{6}\right) + \mathtt{0x7c045d\ldots} \cdot \left(A_{8} + F_{7}\right) + F_{8}\right)\right) \cdot \left(\left(\mathtt{0xab5e5b\ldots} \cdot \left(A_{5}\right) + \mathtt{0x319166\ldots} \cdot \left(A_{7} + F_{6}\right) + \mathtt{0x7c045d\ldots} \cdot \left(A_{8} + F_{7}\right) + F_{8}\right) \cdot \left(\mathtt{0xab5e5b\ldots} \cdot \left(A_{5}\right) + \mathtt{0x319166\ldots} \cdot \left(A_{7} + F_{6}\right) + \mathtt{0x7c045d\ldots} \cdot \left(A_{8} + F_{7}\right) + F_{8}\right)\right)\right) \cdot \left(\mathtt{0xab5e5b\ldots} \cdot \left(A_{5}\right) + \mathtt{0x319166\ldots} \cdot \left(A_{7} + F_{6}\right) + \mathtt{0x7c045d\ldots} \cdot \left(A_{8} + F_{7}\right) + F_{8}\right) + -\left(\mathtt{0x2cc057\ldots} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x32e7c4\ldots} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x2eae5d\ldots} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 81 (original index 81)
+### `constraint 3` (selector $q_{23}$)
 
 $$
 \mathtt{0x233162\ldots} \cdot \left(A_{5}\right) + \mathtt{0x25cae2\ldots} \cdot \left(A_{7} + F_{6}\right) + \mathtt{0x22f5b5\ldots} \cdot \left(A_{8} + F_{7}\right) + F_{9} + -\left(\mathtt{0x7bf368\ldots} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x2aec69\ldots} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x952e02\ldots} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 82 (original index 82)
+### `constraint 4` (selector $q_{23}$)
 
 $$
 \mathtt{0x2e29dd\ldots} \cdot \left(A_{5}\right) + \mathtt{0x1d1aab\ldots} \cdot \left(A_{7} + F_{6}\right) + \mathtt{0x3bf763\ldots} \cdot \left(A_{8} + F_{7}\right) + F_{10} + -\left(\mathtt{0x2fcbba\ldots} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x1ec737\ldots} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0xd0c2ef\ldots} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 83 (original index 83)
+## Gate 24. `pad-and-add`
+
+_Source: PoseidonChip (halo2_gadgets). 3 constraints._
+
+### `constraint 1` (selector $q_{24}$)
 
 $$
 A_{6}^{(-1)} + A_{6} + -\left(A_{6}^{(+1)}\right) = 0
 $$
 
-### Polynomial 84 (original index 84)
+### `constraint 2` (selector $q_{24}$)
 
 $$
 A_{7}^{(-1)} + A_{7} + -\left(A_{7}^{(+1)}\right) = 0
 $$
 
-### Polynomial 85 (original index 85)
+### `constraint 3` (selector $q_{24}$)
 
 $$
 A_{8}^{(-1)} + -\left(A_{8}^{(+1)}\right) = 0
 $$
 
-### Polynomial 86 (original index 86)
+## Gate 25. `Initial y_Q`
+
+_Source: SinsemillaChip (halo2_gadgets). 1 constraint._
+
+### `init_y_q_check` (selector $q_{26}$)
 
 $$
 \mathtt{0x2} \cdot \left(F_{3}\right) + -\left(\left(A_{3} + A_{4}\right) \cdot \left(A_{0} + -\left(\left(A_{3}\right) \cdot \left(A_{3}\right) + -\left(A_{0}\right) + -\left(A_{1}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 89 (original index 89)
+## Gate 26. `Sinsemilla gate`
+
+_Source: SinsemillaChip (halo2_gadgets). 2 constraints._
+
+### `Secant line` (selector $q_{25}$)
+
+$$
+\left(A_{4}\right) \cdot \left(A_{4}\right) + -\left(A_{0}^{(+1)} + \left(A_{3}\right) \cdot \left(A_{3}\right) + -\left(A_{0}\right) + -\left(A_{1}\right) + A_{0}\right) = 0
+$$
+
+### `y check` (selector $q_{25}$)
+
+$$
+\left(\mathtt{0x4} \cdot \left(A_{4}\right)\right) \cdot \left(A_{0} + -\left(A_{0}^{(+1)}\right)\right) + -\left(\mathtt{0x2} \cdot \left(\left(A_{3} + A_{4}\right) \cdot \left(A_{0} + -\left(\left(A_{3}\right) \cdot \left(A_{3}\right) + -\left(A_{0}\right) + -\left(A_{1}\right)\right)\right)\right) + \left(\mathtt{0x2} + -\left(\left(F_{12}\right) \cdot \left(F_{12} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(\left(A_{3}^{(+1)} + A_{4}^{(+1)}\right) \cdot \left(A_{0}^{(+1)} + -\left(\left(A_{3}^{(+1)}\right) \cdot \left(A_{3}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right) + -\left(A_{1}^{(+1)}\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(\left(F_{12}\right) \cdot \left(F_{12} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(A_{3}^{(+1)}\right)\right) = 0
+$$
+
+## Gate 27. `a' = b ⋅ swap + a ⋅ (1-swap)`
+
+_Source: MerkleChip (halo2_gadgets). 3 constraints._
+
+### `a check` (selector $q_{27}$)
 
 $$
 A_{2} + -\left(\left(A_{4}\right) \cdot \left(A_{1}\right) + \left(\mathtt{0x1} + -\left(A_{4}\right)\right) \cdot \left(A_{0}\right)\right) = 0
 $$
 
-### Polynomial 90 (original index 90)
+### `b check` (selector $q_{27}$)
 
 $$
 A_{3} + -\left(\left(A_{4}\right) \cdot \left(A_{0}\right) + \left(\mathtt{0x1} + -\left(A_{4}\right)\right) \cdot \left(A_{1}\right)\right) = 0
 $$
 
-### Polynomial 91 (original index 91)
+### `swap is bool` (selector $q_{27}$)
 
 $$
 \left(A_{4}\right) \cdot \left(\mathtt{0x1} + -\left(A_{4}\right)\right) = 0
 $$
 
-## Group 10 (envelope column $F_{25}$, 26 polynomials)
+## Gate 28. `Decomposition check`
 
-### Polynomial 92 (original index 92)
+_Source: MerkleChip (halo2_gadgets). 4 constraints._
+
+### `l_check` (selector $q_{28}$)
 
 $$
 A_{0} + -\left(\mathtt{0x400} \cdot \left(A_{0}^{(+1)}\right)\right) + -\left(A_{4}^{(+1)}\right) = 0
 $$
 
-### Polynomial 93 (original index 93)
+### `left_check` (selector $q_{28}$)
 
 $$
 A_{0}^{(+1)} + \mathtt{0x100000\ldots} \cdot \left(A_{1} + -\left(\mathtt{0x400} \cdot \left(A_{1}^{(+1)}\right)\right) + \mathtt{0x400} \cdot \left(A_{2}^{(+1)}\right)\right) + -\left(A_{3}\right) = 0
 $$
 
-### Polynomial 94 (original index 94)
+### `right_check` (selector $q_{28}$)
 
 $$
 A_{3}^{(+1)} + \mathtt{0x20} \cdot \left(A_{2}\right) + -\left(A_{4}\right) = 0
 $$
 
-### Polynomial 95 (original index 95)
+### `b1_b2_check` (selector $q_{28}$)
 
 $$
 A_{1}^{(+1)} + -\left(A_{2}^{(+1)} + \mathtt{0x20} \cdot \left(A_{3}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 96 (original index 96)
+## Gate 29. `Initial y_Q`
+
+_Source: SinsemillaChip (halo2_gadgets). 1 constraint._
+
+### `init_y_q_check` (selector $q_{30}$)
 
 $$
 \mathtt{0x2} \cdot \left(F_{4}\right) + -\left(\left(A_{8} + A_{9}\right) \cdot \left(A_{5} + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{5}\right) + -\left(A_{6}\right)\right)\right)\right) = 0
 $$
 
-### Polynomial 106 (original index 106)
+## Gate 30. `Sinsemilla gate`
+
+_Source: SinsemillaChip (halo2_gadgets). 2 constraints._
+
+### `Secant line` (selector $q_{29}$)
 
 $$
-\left(A_{4}\right) \cdot \left(\mathtt{0x1} + -\left(A_{4}\right)\right) = 0
+\left(A_{9}\right) \cdot \left(A_{9}\right) + -\left(A_{5}^{(+1)} + \left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{5}\right) + -\left(A_{6}\right) + A_{5}\right) = 0
 $$
 
-### Polynomial 107 (original index 107)
+### `y check` (selector $q_{29}$)
 
 $$
-\left(A_{4}^{(+1)}\right) \cdot \left(\mathtt{0x1} + -\left(A_{4}^{(+1)}\right)\right) = 0
+\left(\mathtt{0x4} \cdot \left(A_{9}\right)\right) \cdot \left(A_{5} + -\left(A_{5}^{(+1)}\right)\right) + -\left(\mathtt{0x2} \cdot \left(\left(A_{8} + A_{9}\right) \cdot \left(A_{5} + -\left(\left(A_{8}\right) \cdot \left(A_{8}\right) + -\left(A_{5}\right) + -\left(A_{6}\right)\right)\right)\right) + \left(\mathtt{0x2} + -\left(\left(F_{13}\right) \cdot \left(F_{13} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(\left(A_{8}^{(+1)} + A_{9}^{(+1)}\right) \cdot \left(A_{5}^{(+1)} + -\left(\left(A_{8}^{(+1)}\right) \cdot \left(A_{8}^{(+1)}\right) + -\left(A_{5}^{(+1)}\right) + -\left(A_{6}^{(+1)}\right)\right)\right)\right) + \left(\mathtt{0x2} \cdot \left(\left(F_{13}\right) \cdot \left(F_{13} + -\left(\mathtt{0x1}\right)\right)\right)\right) \cdot \left(A_{8}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 108 (original index 108)
+## Gate 31. `a' = b ⋅ swap + a ⋅ (1-swap)`
 
-$$
-A_{2} + -\left(A_{3} + \mathtt{0x10} \cdot \left(A_{4}\right) + \mathtt{0x20} \cdot \left(A_{5}\right)\right) = 0
-$$
+_Source: MerkleChip (halo2_gadgets). 3 constraints._
 
-### Polynomial 109 (original index 109)
-
-$$
-A_{2}^{(+1)} + -\left(A_{3}^{(+1)} + \mathtt{0x200} \cdot \left(A_{4}^{(+1)}\right)\right) = 0
-$$
-
-### Polynomial 110 (original index 110)
-
-$$
-A_{1} + \mathtt{0x400000\ldots} \cdot \left(A_{3}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{4}\right) + -\left(A_{0}\right) = 0
-$$
-
-### Polynomial 111 (original index 111)
-
-$$
-A_{5} + \mathtt{0x20} \cdot \left(A_{1}^{(+1)}\right) + \mathtt{0x200000\ldots} \cdot \left(A_{3}^{(+1)}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{4}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right) = 0
-$$
-
-### Polynomial 112 (original index 112)
-
-$$
-\left(A_{4}\right) \cdot \left(A_{3}\right) = 0
-$$
-
-### Polynomial 113 (original index 113)
-
-$$
-\left(A_{4}\right) \cdot \left(A_{6}\right) = 0
-$$
-
-### Polynomial 114 (original index 114)
-
-$$
-A_{1} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{7}\right) = 0
-$$
-
-### Polynomial 115 (original index 115)
-
-$$
-\left(A_{4}\right) \cdot \left(A_{8}\right) = 0
-$$
-
-### Polynomial 116 (original index 116)
-
-$$
-\left(A_{4}^{(+1)}\right) \cdot \left(A_{3}^{(+1)}\right) = 0
-$$
-
-### Polynomial 117 (original index 117)
-
-$$
-\left(A_{4}^{(+1)}\right) \cdot \left(A_{6}^{(+1)}\right) = 0
-$$
-
-### Polynomial 118 (original index 118)
-
-$$
-A_{5} + \mathtt{0x20} \cdot \left(A_{1}^{(+1)}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{7}^{(+1)}\right) = 0
-$$
-
-### Polynomial 119 (original index 119)
-
-$$
-\left(A_{4}^{(+1)}\right) \cdot \left(A_{8}^{(+1)}\right) = 0
-$$
-
-### Polynomial 120 (original index 120)
-
-$$
-\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
-$$
-
-### Polynomial 121 (original index 121)
-
-$$
-\left(A_{7}^{(+1)}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}^{(+1)}\right)\right) = 0
-$$
-
-### Polynomial 122 (original index 122)
-
-$$
-A_{6} + -\left(A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x20} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x40} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
-$$
-
-### Polynomial 123 (original index 123)
-
-$$
-\left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right) = 0
-$$
-
-### Polynomial 124 (original index 124)
-
-$$
-\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
-$$
-
-### Polynomial 125 (original index 125)
-
-$$
-A_{6} + -\left(A_{7} + \mathtt{0x2} \cdot \left(A_{8}\right) + \mathtt{0x4} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x400} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
-$$
-
-### Polynomial 126 (original index 126)
-
-$$
-A_{6} + -\left(A_{7} + \mathtt{0x40} \cdot \left(A_{8}\right)\right) = 0
-$$
-
-## Group 11 (envelope column $F_{26}$, 21 polynomials)
-
-### Polynomial 99 (original index 99)
+### `a check` (selector $q_{31}$)
 
 $$
 A_{7} + -\left(\left(A_{9}\right) \cdot \left(A_{6}\right) + \left(\mathtt{0x1} + -\left(A_{9}\right)\right) \cdot \left(A_{5}\right)\right) = 0
 $$
 
-### Polynomial 100 (original index 100)
+### `b check` (selector $q_{31}$)
 
 $$
 A_{8} + -\left(\left(A_{9}\right) \cdot \left(A_{5}\right) + \left(\mathtt{0x1} + -\left(A_{9}\right)\right) \cdot \left(A_{6}\right)\right) = 0
 $$
 
-### Polynomial 101 (original index 101)
+### `swap is bool` (selector $q_{31}$)
 
 $$
 \left(A_{9}\right) \cdot \left(\mathtt{0x1} + -\left(A_{9}\right)\right) = 0
 $$
 
-### Polynomial 102 (original index 102)
+## Gate 32. `Decomposition check`
+
+_Source: MerkleChip (halo2_gadgets). 4 constraints._
+
+### `l_check` (selector $q_{32}$)
 
 $$
 A_{5} + -\left(\mathtt{0x400} \cdot \left(A_{5}^{(+1)}\right)\right) + -\left(A_{9}^{(+1)}\right) = 0
 $$
 
-### Polynomial 103 (original index 103)
+### `left_check` (selector $q_{32}$)
 
 $$
 A_{5}^{(+1)} + \mathtt{0x100000\ldots} \cdot \left(A_{6} + -\left(\mathtt{0x400} \cdot \left(A_{6}^{(+1)}\right)\right) + \mathtt{0x400} \cdot \left(A_{7}^{(+1)}\right)\right) + -\left(A_{8}\right) = 0
 $$
 
-### Polynomial 104 (original index 104)
+### `right_check` (selector $q_{32}$)
 
 $$
 A_{8}^{(+1)} + \mathtt{0x20} \cdot \left(A_{7}\right) + -\left(A_{9}\right) = 0
 $$
 
-### Polynomial 105 (original index 105)
+### `b1_b2_check` (selector $q_{32}$)
 
 $$
 A_{6}^{(+1)} + -\left(A_{7}^{(+1)} + \mathtt{0x20} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 127 (original index 127)
+## Gate 33. `CommitIvk canonicity check`
+
+_Source: CommitIvkChip (src/circuit/commit_ivk.rs). 14 constraints._
+
+### `b1_bool_check` (selector $q_{33}$)
 
 $$
-\left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right) = 0
+\left(A_{4}\right) \cdot \left(\mathtt{0x1} + -\left(A_{4}\right)\right) = 0
 $$
 
-### Polynomial 128 (original index 128)
+### `d1_bool_check` (selector $q_{33}$)
 
 $$
-A_{6} + -\left(A_{7} + \mathtt{0x2} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x400} \cdot \left(A_{7}^{(+1)}\right)\right) = 0
+\left(A_{4}^{(+1)}\right) \cdot \left(\mathtt{0x1} + -\left(A_{4}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 129 (original index 129)
+### `b_decomposition_check` (selector $q_{33}$)
 
 $$
-\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
+A_{2} + -\left(A_{3} + \mathtt{0x10} \cdot \left(A_{4}\right) + \mathtt{0x20} \cdot \left(A_{5}\right)\right) = 0
 $$
 
-### Polynomial 130 (original index 130)
+### `d_decomposition_check` (selector $q_{33}$)
 
 $$
-A_{6} + -\left(A_{7} + \mathtt{0x20} \cdot \left(A_{8}\right)\right) = 0
+A_{2}^{(+1)} + -\left(A_{3}^{(+1)} + \mathtt{0x200} \cdot \left(A_{4}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 131 (original index 131)
+### `ak_decomposition_check` (selector $q_{33}$)
 
 $$
-A_{8} + \mathtt{0x400000\ldots} \cdot \left(A_{7}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
+A_{1} + \mathtt{0x400000\ldots} \cdot \left(A_{3}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{4}\right) + -\left(A_{0}\right) = 0
 $$
 
-### Polynomial 132 (original index 132)
+### `nk_decomposition_check` (selector $q_{33}$)
 
 $$
-A_{8} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
+A_{5} + \mathtt{0x20} \cdot \left(A_{1}^{(+1)}\right) + \mathtt{0x200000\ldots} \cdot \left(A_{3}^{(+1)}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{4}^{(+1)}\right) + -\left(A_{0}^{(+1)}\right) = 0
 $$
 
-### Polynomial 133 (original index 133)
+### `b0_canon_check` (selector $q_{33}$)
 
 $$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{7}\right) = 0
+\left(A_{4}\right) \cdot \left(A_{3}\right) = 0
 $$
 
-### Polynomial 134 (original index 134)
+### `z13_a_check` (selector $q_{33}$)
 
 $$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
+\left(A_{4}\right) \cdot \left(A_{6}\right) = 0
 $$
 
-### Polynomial 135 (original index 135)
+### `a_prime_check` (selector $q_{33}$)
 
 $$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
+A_{1} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{7}\right) = 0
 $$
 
-### Polynomial 136 (original index 136)
+### `z13_a_prime` (selector $q_{33}$)
 
 $$
-A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
+\left(A_{4}\right) \cdot \left(A_{8}\right) = 0
 $$
 
-### Polynomial 137 (original index 137)
+### `c0_canon_check` (selector $q_{33}$)
 
 $$
-A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
+\left(A_{4}^{(+1)}\right) \cdot \left(A_{3}^{(+1)}\right) = 0
 $$
 
-### Polynomial 138 (original index 138)
+### `z13_c_check` (selector $q_{33}$)
 
 $$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
+\left(A_{4}^{(+1)}\right) \cdot \left(A_{6}^{(+1)}\right) = 0
 $$
 
-### Polynomial 139 (original index 139)
+### `b2_c_prime_check` (selector $q_{33}$)
 
 $$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
+A_{5} + \mathtt{0x20} \cdot \left(A_{1}^{(+1)}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{7}^{(+1)}\right) = 0
 $$
 
-### Polynomial 140 (original index 140)
+### `z14_b2_c_prime` (selector $q_{33}$)
 
 $$
-A_{7} + \mathtt{0x100} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{9}\right) + -\left(A_{6}\right) = 0
+\left(A_{4}^{(+1)}\right) \cdot \left(A_{8}^{(+1)}\right) = 0
 $$
 
-## Group 12 (envelope column $F_{27}$, 25 polynomials)
+## Gate 34. `NoteCommit MessagePiece b`
 
-### Polynomial 141 (original index 141)
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 3 constraints._
 
-$$
-A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
-$$
-
-### Polynomial 142 (original index 142)
-
-$$
-A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
-$$
-
-### Polynomial 143 (original index 143)
-
-$$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
-$$
-
-### Polynomial 144 (original index 144)
-
-$$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
-$$
-
-### Polynomial 145 (original index 145)
-
-$$
-A_{7} + \mathtt{0x200} \cdot \left(A_{8}\right) + \mathtt{0x200000\ldots} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
-$$
-
-### Polynomial 146 (original index 146)
-
-$$
-A_{7} + \mathtt{0x200} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
-$$
-
-### Polynomial 147 (original index 147)
-
-$$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{6}^{(+1)}\right) = 0
-$$
-
-### Polynomial 148 (original index 148)
-
-$$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
-$$
-
-### Polynomial 149 (original index 149)
-
-$$
-\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
-$$
-
-### Polynomial 150 (original index 150)
-
-$$
-\left(A_{9}\right) \cdot \left(\mathtt{0x1} + -\left(A_{9}\right)\right) = 0
-$$
-
-### Polynomial 151 (original index 151)
-
-$$
-A_{5}^{(+1)} + -\left(A_{6} + \mathtt{0x2} \cdot \left(A_{7}\right) + \mathtt{0x400} \cdot \left(A_{6}^{(+1)}\right)\right) = 0
-$$
-
-### Polynomial 152 (original index 152)
-
-$$
-A_{5} + -\left(A_{5}^{(+1)} + \mathtt{0x400000\ldots} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{9}\right)\right) = 0
-$$
-
-### Polynomial 153 (original index 153)
-
-$$
-A_{5}^{(+1)} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
-$$
-
-### Polynomial 154 (original index 154)
-
-$$
-\left(A_{9}\right) \cdot \left(A_{8}\right) = 0
-$$
-
-### Polynomial 155 (original index 155)
-
-$$
-\left(A_{9}\right) \cdot \left(A_{7}^{(+1)}\right) = 0
-$$
-
-### Polynomial 156 (original index 156)
-
-$$
-\left(A_{9}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
-$$
-
-### Polynomial 157 (original index 157)
+### `bool_check b_1` (selector $q_{34}$)
 
 $$
 \left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
 $$
 
-### Polynomial 158 (original index 158)
+### `bool_check b_2` (selector $q_{34}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 159 (original index 159)
+### `decomposition` (selector $q_{34}$)
 
 $$
 A_{6} + -\left(A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x20} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x40} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 160 (original index 160)
+## Gate 35. `NoteCommit MessagePiece d`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 3 constraints._
+
+### `bool_check d_0` (selector $q_{35}$)
 
 $$
 \left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right) = 0
 $$
 
-### Polynomial 161 (original index 161)
+### `bool_check d_1` (selector $q_{35}$)
 
 $$
 \left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
 $$
 
-### Polynomial 162 (original index 162)
+### `decomposition` (selector $q_{35}$)
 
 $$
 A_{6} + -\left(A_{7} + \mathtt{0x2} \cdot \left(A_{8}\right) + \mathtt{0x4} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x400} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 163 (original index 163)
+## Gate 36. `NoteCommit MessagePiece e`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 1 constraint._
+
+### `decomposition` (selector $q_{36}$)
 
 $$
 A_{6} + -\left(A_{7} + \mathtt{0x40} \cdot \left(A_{8}\right)\right) = 0
 $$
 
-### Polynomial 164 (original index 164)
+## Gate 37. `NoteCommit MessagePiece g`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 2 constraints._
+
+### `bool_check g_0` (selector $q_{37}$)
 
 $$
 \left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right) = 0
 $$
 
-### Polynomial 165 (original index 165)
+### `decomposition` (selector $q_{37}$)
 
 $$
 A_{6} + -\left(A_{7} + \mathtt{0x2} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x400} \cdot \left(A_{7}^{(+1)}\right)\right) = 0
 $$
 
-## Group 13 (envelope column $F_{28}$, 28 polynomials)
+## Gate 38. `NoteCommit MessagePiece h`
 
-### Polynomial 166 (original index 166)
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 2 constraints._
+
+### `bool_check h_1` (selector $q_{38}$)
 
 $$
 \left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
 $$
 
-### Polynomial 167 (original index 167)
+### `decomposition` (selector $q_{38}$)
 
 $$
 A_{6} + -\left(A_{7} + \mathtt{0x20} \cdot \left(A_{8}\right)\right) = 0
 $$
 
-### Polynomial 168 (original index 168)
+## Gate 39. `NoteCommit input g_d`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 5 constraints._
+
+### `decomposition` (selector $q_{39}$)
 
 $$
 A_{8} + \mathtt{0x400000\ldots} \cdot \left(A_{7}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
 $$
 
-### Polynomial 169 (original index 169)
+### `a_prime_check` (selector $q_{39}$)
 
 $$
 A_{8} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
 $$
 
-### Polynomial 170 (original index 170)
+### `b_1 = 1 => b_0` (selector $q_{39}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{7}\right) = 0
 $$
 
-### Polynomial 171 (original index 171)
+### `b_1 = 1 => z13_a` (selector $q_{39}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
 $$
 
-### Polynomial 172 (original index 172)
+### `b_1 = 1 => z13_a_prime` (selector $q_{39}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
 $$
 
-### Polynomial 173 (original index 173)
+## Gate 40. `NoteCommit input pk_d`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 4 constraints._
+
+### `decomposition` (selector $q_{40}$)
 
 $$
 A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
 $$
 
-### Polynomial 174 (original index 174)
+### `b3_c_prime_check` (selector $q_{40}$)
 
 $$
 A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
 $$
 
-### Polynomial 175 (original index 175)
+### `d_0 = 1 => z13_c` (selector $q_{40}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
 $$
 
-### Polynomial 176 (original index 176)
+### `d_0 = 1 => z14_b3_c_prime` (selector $q_{40}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
 $$
 
-### Polynomial 177 (original index 177)
+## Gate 41. `NoteCommit input value`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 1 constraint._
+
+### `value_check` (selector $q_{41}$)
 
 $$
 A_{7} + \mathtt{0x100} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{9}\right) + -\left(A_{6}\right) = 0
 $$
 
-### Polynomial 178 (original index 178)
+## Gate 42. `NoteCommit input rho`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 4 constraints._
+
+### `decomposition` (selector $q_{42}$)
 
 $$
 A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
 $$
 
-### Polynomial 179 (original index 179)
+### `e1_f_prime_check` (selector $q_{42}$)
 
 $$
 A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
 $$
 
-### Polynomial 180 (original index 180)
+### `g_0 = 1 => z13_f` (selector $q_{42}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
 $$
 
-### Polynomial 181 (original index 181)
+### `g_0 = 1 => z14_e1_f_prime` (selector $q_{42}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
 $$
 
-### Polynomial 182 (original index 182)
+## Gate 43. `NoteCommit input psi`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 5 constraints._
+
+### `decomposition` (selector $q_{43}$)
 
 $$
 A_{7} + \mathtt{0x200} \cdot \left(A_{8}\right) + \mathtt{0x200000\ldots} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
 $$
 
-### Polynomial 183 (original index 183)
+### `g1_g2_prime_check` (selector $q_{43}$)
 
 $$
 A_{7} + \mathtt{0x200} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
 $$
 
-### Polynomial 184 (original index 184)
+### `h_1 = 1 => h_0` (selector $q_{43}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{6}^{(+1)}\right) = 0
 $$
 
-### Polynomial 185 (original index 185)
+### `h_1 = 1 => z13_g` (selector $q_{43}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
 $$
 
-### Polynomial 186 (original index 186)
+### `h_1 = 1 => z13_g1_g2_prime` (selector $q_{43}$)
 
 $$
 \left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
 $$
 
-### Polynomial 187 (original index 187)
+## Gate 44. `y coordinate checks`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 7 constraints._
+
+### `k3_check` (selector $q_{44}$)
 
 $$
 \left(A_{9}\right) \cdot \left(\mathtt{0x1} + -\left(A_{9}\right)\right) = 0
 $$
 
-### Polynomial 188 (original index 188)
+### `j_check` (selector $q_{44}$)
 
 $$
 A_{5}^{(+1)} + -\left(A_{6} + \mathtt{0x2} \cdot \left(A_{7}\right) + \mathtt{0x400} \cdot \left(A_{6}^{(+1)}\right)\right) = 0
 $$
 
-### Polynomial 189 (original index 189)
+### `y_check` (selector $q_{44}$)
 
 $$
 A_{5} + -\left(A_{5}^{(+1)} + \mathtt{0x400000\ldots} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{9}\right)\right) = 0
 $$
 
-### Polynomial 190 (original index 190)
+### `j_prime_check` (selector $q_{44}$)
 
 $$
 A_{5}^{(+1)} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
 $$
 
-### Polynomial 191 (original index 191)
+### `k_3 = 1 => k_2 = 0` (selector $q_{44}$)
 
 $$
 \left(A_{9}\right) \cdot \left(A_{8}\right) = 0
 $$
 
-### Polynomial 192 (original index 192)
+### `k_3 = 1 => z13_j = 0` (selector $q_{44}$)
 
 $$
 \left(A_{9}\right) \cdot \left(A_{7}^{(+1)}\right) = 0
 $$
 
-### Polynomial 193 (original index 193)
+### `k_3 = 1 => z13_j_prime = 0` (selector $q_{44}$)
+
+$$
+\left(A_{9}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
+$$
+
+## Gate 45. `NoteCommit MessagePiece b`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 3 constraints._
+
+### `bool_check b_1` (selector $q_{45}$)
+
+$$
+\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
+$$
+
+### `bool_check b_2` (selector $q_{45}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}^{(+1)}\right)\right) = 0
+$$
+
+### `decomposition` (selector $q_{45}$)
+
+$$
+A_{6} + -\left(A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x20} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x40} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
+$$
+
+## Gate 46. `NoteCommit MessagePiece d`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 3 constraints._
+
+### `bool_check d_0` (selector $q_{46}$)
+
+$$
+\left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right) = 0
+$$
+
+### `bool_check d_1` (selector $q_{46}$)
+
+$$
+\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
+$$
+
+### `decomposition` (selector $q_{46}$)
+
+$$
+A_{6} + -\left(A_{7} + \mathtt{0x2} \cdot \left(A_{8}\right) + \mathtt{0x4} \cdot \left(A_{7}^{(+1)}\right) + \mathtt{0x400} \cdot \left(A_{8}^{(+1)}\right)\right) = 0
+$$
+
+## Gate 47. `NoteCommit MessagePiece e`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 1 constraint._
+
+### `decomposition` (selector $q_{47}$)
+
+$$
+A_{6} + -\left(A_{7} + \mathtt{0x40} \cdot \left(A_{8}\right)\right) = 0
+$$
+
+## Gate 48. `NoteCommit MessagePiece g`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 2 constraints._
+
+### `bool_check g_0` (selector $q_{48}$)
+
+$$
+\left(A_{7}\right) \cdot \left(\mathtt{0x1} + -\left(A_{7}\right)\right) = 0
+$$
+
+### `decomposition` (selector $q_{48}$)
+
+$$
+A_{6} + -\left(A_{7} + \mathtt{0x2} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x400} \cdot \left(A_{7}^{(+1)}\right)\right) = 0
+$$
+
+## Gate 49. `NoteCommit MessagePiece h`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 2 constraints._
+
+### `bool_check h_1` (selector $q_{49}$)
+
+$$
+\left(A_{8}\right) \cdot \left(\mathtt{0x1} + -\left(A_{8}\right)\right) = 0
+$$
+
+### `decomposition` (selector $q_{49}$)
+
+$$
+A_{6} + -\left(A_{7} + \mathtt{0x20} \cdot \left(A_{8}\right)\right) = 0
+$$
+
+## Gate 50. `NoteCommit input g_d`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 5 constraints._
+
+### `decomposition` (selector $q_{50}$)
+
+$$
+A_{8} + \mathtt{0x400000\ldots} \cdot \left(A_{7}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
+$$
+
+### `a_prime_check` (selector $q_{50}$)
+
+$$
+A_{8} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
+$$
+
+### `b_1 = 1 => b_0` (selector $q_{50}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{7}\right) = 0
+$$
+
+### `b_1 = 1 => z13_a` (selector $q_{50}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
+$$
+
+### `b_1 = 1 => z13_a_prime` (selector $q_{50}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
+$$
+
+## Gate 51. `NoteCommit input pk_d`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 4 constraints._
+
+### `decomposition` (selector $q_{51}$)
+
+$$
+A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
+$$
+
+### `b3_c_prime_check` (selector $q_{51}$)
+
+$$
+A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
+$$
+
+### `d_0 = 1 => z13_c` (selector $q_{51}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
+$$
+
+### `d_0 = 1 => z14_b3_c_prime` (selector $q_{51}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
+$$
+
+## Gate 52. `NoteCommit input value`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 1 constraint._
+
+### `value_check` (selector $q_{52}$)
+
+$$
+A_{7} + \mathtt{0x100} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{9}\right) + -\left(A_{6}\right) = 0
+$$
+
+## Gate 53. `NoteCommit input rho`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 4 constraints._
+
+### `decomposition` (selector $q_{53}$)
+
+$$
+A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
+$$
+
+### `e1_f_prime_check` (selector $q_{53}$)
+
+$$
+A_{7} + \mathtt{0x10} \cdot \left(A_{8}\right) + \mathtt{0x100000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
+$$
+
+### `g_0 = 1 => z13_f` (selector $q_{53}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
+$$
+
+### `g_0 = 1 => z14_e1_f_prime` (selector $q_{53}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
+$$
+
+## Gate 54. `NoteCommit input psi`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 5 constraints._
+
+### `decomposition` (selector $q_{54}$)
+
+$$
+A_{7} + \mathtt{0x200} \cdot \left(A_{8}\right) + \mathtt{0x200000\ldots} \cdot \left(A_{6}^{(+1)}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{7}^{(+1)}\right) + -\left(A_{6}\right) = 0
+$$
+
+### `g1_g2_prime_check` (selector $q_{54}$)
+
+$$
+A_{7} + \mathtt{0x200} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
+$$
+
+### `h_1 = 1 => h_0` (selector $q_{54}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{6}^{(+1)}\right) = 0
+$$
+
+### `h_1 = 1 => z13_g` (selector $q_{54}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}\right) = 0
+$$
+
+### `h_1 = 1 => z13_g1_g2_prime` (selector $q_{54}$)
+
+$$
+\left(A_{7}^{(+1)}\right) \cdot \left(A_{9}^{(+1)}\right) = 0
+$$
+
+## Gate 55. `y coordinate checks`
+
+_Source: NoteCommitChip (src/circuit/note_commit.rs). 7 constraints._
+
+### `k3_check` (selector $q_{55}$)
+
+$$
+\left(A_{9}\right) \cdot \left(\mathtt{0x1} + -\left(A_{9}\right)\right) = 0
+$$
+
+### `j_check` (selector $q_{55}$)
+
+$$
+A_{5}^{(+1)} + -\left(A_{6} + \mathtt{0x2} \cdot \left(A_{7}\right) + \mathtt{0x400} \cdot \left(A_{6}^{(+1)}\right)\right) = 0
+$$
+
+### `y_check` (selector $q_{55}$)
+
+$$
+A_{5} + -\left(A_{5}^{(+1)} + \mathtt{0x400000\ldots} \cdot \left(A_{8}\right) + \mathtt{0x400000\ldots} \cdot \left(A_{9}\right)\right) = 0
+$$
+
+### `j_prime_check` (selector $q_{55}$)
+
+$$
+A_{5}^{(+1)} + \mathtt{0x400000\ldots} + -\left(\mathtt{0x224698\ldots}\right) + -\left(A_{8}^{(+1)}\right) = 0
+$$
+
+### `k_3 = 1 => k_2 = 0` (selector $q_{55}$)
+
+$$
+\left(A_{9}\right) \cdot \left(A_{8}\right) = 0
+$$
+
+### `k_3 = 1 => z13_j = 0` (selector $q_{55}$)
+
+$$
+\left(A_{9}\right) \cdot \left(A_{7}^{(+1)}\right) = 0
+$$
+
+### `k_3 = 1 => z13_j_prime = 0` (selector $q_{55}$)
 
 $$
 \left(A_{9}\right) \cdot \left(A_{9}^{(+1)}\right) = 0

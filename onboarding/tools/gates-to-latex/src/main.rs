@@ -1,9 +1,17 @@
-// Parse the pinned src/circuit_description dump of the Orchard Action
-// circuit verifier key and emit a Markdown appendix listing every gate
-// polynomial as KaTeX. The input is the Rust Debug rendering of
-// halo2_proofs::plonk::PinnedVerificationKey at the orchard 0.13.1
-// commit; the format is stable between halo2_proofs minor releases.
+// Render the Orchard Action circuit's gates as a readable Markdown
+// appendix. The input is the Rust `Debug` rendering of the freshly
+// configured (pre-`compress_selectors`) `halo2_proofs::plonk::ConstraintSystem`,
+// produced by the `dump_action_constraint_system` test in the orchard
+// crate (run with `ORCHARD_DUMP_CONSTRAINT_SYSTEM=1`).
+//
+// Unlike the pinned verifying key, this dump retains every source-level
+// `meta.create_gate(...)` name, the per-constraint labels passed to
+// `Constraints::with_selector`, and the original (envelope-free)
+// polynomials. We group the output by source-level gate so the appendix
+// can serve as the obligation list for formally verifying each gate, with
+// the doc sitting next to the code it describes.
 
+use std::collections::BTreeMap;
 use std::env;
 use std::fs;
 use std::process;
@@ -84,7 +92,9 @@ impl<'a> Parser<'a> {
             }
             self.i += 1;
         }
-        std::str::from_utf8(&self.s[start..self.i]).unwrap().to_string()
+        std::str::from_utf8(&self.s[start..self.i])
+            .unwrap()
+            .to_string()
     }
 
     fn parse_expr(&mut self) -> Node {
@@ -99,7 +109,9 @@ impl<'a> Parser<'a> {
                     self.i += 1;
                 }
             }
-            let val = std::str::from_utf8(&self.s[start..self.i]).unwrap().to_string();
+            let val = std::str::from_utf8(&self.s[start..self.i])
+                .unwrap()
+                .to_string();
             self.i += 1;
             return Node::Str(val);
         }
@@ -119,7 +131,11 @@ impl<'a> Parser<'a> {
                 while self.i < self.s.len() && self.s[self.i].is_ascii_hexdigit() {
                     self.i += 1;
                 }
-                return Node::Hex(std::str::from_utf8(&self.s[start..self.i]).unwrap().to_string());
+                return Node::Hex(
+                    std::str::from_utf8(&self.s[start..self.i])
+                        .unwrap()
+                        .to_string(),
+                );
             }
             let start = self.i;
             if self.s[self.i] == b'-' {
@@ -128,7 +144,11 @@ impl<'a> Parser<'a> {
             while self.i < self.s.len() && self.s[self.i].is_ascii_digit() {
                 self.i += 1;
             }
-            return Node::Int(std::str::from_utf8(&self.s[start..self.i]).unwrap().to_string());
+            return Node::Int(
+                std::str::from_utf8(&self.s[start..self.i])
+                    .unwrap()
+                    .to_string(),
+            );
         }
         let name = self.parse_ident();
         if self.peek() == Some(b'(') {
@@ -156,11 +176,12 @@ impl<'a> Parser<'a> {
     }
 }
 
+/// Locate `gates: [ ... ]` and parse the array of `Gate { ... }` structs.
 fn extract_gates(s: &str) -> Vec<Node> {
     let marker = "gates: [";
     let idx = s
         .find(marker)
-        .expect("could not locate the gates: [ marker; is this a PinnedVerificationKey dump?");
+        .expect("could not locate the gates: [ marker; is this a ConstraintSystem Debug dump?");
     let start = idx + marker.len() - 1;
     let mut p = Parser::new(&s[start..]);
     match p.parse_expr() {
@@ -169,25 +190,21 @@ fn extract_gates(s: &str) -> Vec<Node> {
     }
 }
 
+fn field<'a>(fields: &'a [(String, Node)], name: &str) -> Option<&'a Node> {
+    fields.iter().find(|(k, _)| k == name).map(|(_, v)| v)
+}
+
 fn field_int(fields: &[(String, Node)], name: &str) -> i64 {
-    for (k, v) in fields {
-        if k == name {
-            if let Node::Int(s) = v {
-                return s.parse().unwrap_or(0);
-            }
-        }
+    match field(fields, name) {
+        Some(Node::Int(s)) => s.parse().unwrap_or(0),
+        _ => panic!("int field {} not found", name),
     }
-    panic!("field {} not found in struct", name);
 }
 
 fn field_rotation(fields: &[(String, Node)]) -> i64 {
-    for (k, v) in fields {
-        if k == "rotation" {
-            if let Node::Call(_, args) = v {
-                if let Some(Node::Int(s)) = args.first() {
-                    return s.parse().unwrap_or(0);
-                }
-            }
+    if let Some(Node::Call(_, args)) = field(fields, "rotation") {
+        if let Some(Node::Int(s)) = args.first() {
+            return s.parse().unwrap_or(0);
         }
     }
     0
@@ -215,72 +232,41 @@ fn rotation_suffix(r: i64) -> String {
     }
 }
 
-/// A compressed-selector envelope looks like
-/// `(F_c) * (k_1 - F_c) * (k_2 - F_c) * ... * (k_n - F_c) * P`
-/// where P is the actual gate body. `compress_selectors` builds this so
-/// that exactly one value of `F_c` activates each member of the gate
-/// group: the body is enforced when `F_c` takes the value that makes
-/// every `(k_i - F_c)` factor non-zero AND every other body inactive.
-/// We extract `(c, body)` here, treating polynomials that share `c` as
-/// belonging to the same source-level `create_gate` call.
-fn split_envelope(node: &Node) -> Option<(i64, &Node)> {
-    let Node::Call(name, args) = node else { return None };
-    if name != "Product" || args.len() != 2 {
-        return None;
-    }
-    if let Some(c) = find_envelope_col(&args[0]) {
-        return Some((c, &args[1]));
-    }
-    if let Some(c) = find_envelope_col(&args[1]) {
-        return Some((c, &args[0]));
-    }
-    None
+/// Is this node the gate's activating selector, i.e. `Selector(Selector(n, _))`?
+fn is_selector(node: &Node) -> bool {
+    matches!(node, Node::Call(name, _) if name == "Selector")
 }
 
-/// Walk a left-side Product chain looking for any envelope factor
-/// `F_c` or `(k - F_c)`; return the first column index `c` seen. The
-/// chain may contain non-envelope factors (e.g. an Advice column that
-/// gates the constraint on top of the selector), as long as at least
-/// one envelope factor is present.
-fn find_envelope_col(node: &Node) -> Option<i64> {
-    if let Some(c) = envelope_factor_col(node) {
-        return Some(c);
-    }
-    let Node::Call(name, args) = node else { return None };
-    if name != "Product" || args.len() != 2 {
-        return None;
-    }
-    if let Some(c) = find_envelope_col(&args[0]) {
-        return Some(c);
-    }
-    find_envelope_col(&args[1])
-}
-
-fn envelope_factor_col(node: &Node) -> Option<i64> {
-    // Matches either Fixed{column_index: c, rotation: 0} or
-    // Sum(Constant(k), Negated(Fixed{column_index: c, rotation: 0})).
-    if let Node::Struct(name, fields) = node {
-        if name == "Fixed" && field_rotation(fields) == 0 {
-            return Some(field_int(fields, "column_index"));
-        }
-    }
+/// Extract the numeric index from a `Selector(Selector(n, _))` node.
+fn selector_index(node: &Node) -> Option<i64> {
     if let Node::Call(name, args) = node {
-        if name == "Sum" && args.len() == 2 {
-            if let (Node::Call(cn, cargs), Node::Call(nn, nargs)) = (&args[0], &args[1]) {
-                if cn == "Constant" && nn == "Negated" && nargs.len() == 1 {
-                    if let Node::Struct(sn, sfields) = &nargs[0] {
-                        if sn == "Fixed"
-                            && field_rotation(sfields) == 0
-                            && matches!(cargs.first(), Some(Node::Hex(_) | Node::Int(_)))
-                        {
-                            return Some(field_int(sfields, "column_index"));
-                        }
-                    }
+        if name == "Selector" {
+            if let Some(Node::Call(_, inner)) = args.first() {
+                if let Some(Node::Int(s)) = inner.first() {
+                    return s.parse().ok();
                 }
             }
         }
     }
     None
+}
+
+/// Every constraint is stored as `selector * body`. Peel the leading
+/// selector factor off so the math block shows the body alone; return
+/// `(selector_index, body)`. If the polynomial does not have the expected
+/// shape, return the whole node with no selector.
+fn split_selector(node: &Node) -> (Option<i64>, &Node) {
+    if let Node::Call(name, args) = node {
+        if name == "Product" && args.len() == 2 {
+            if is_selector(&args[0]) {
+                return (selector_index(&args[0]), &args[1]);
+            }
+            if is_selector(&args[1]) {
+                return (selector_index(&args[1]), &args[0]);
+            }
+        }
+    }
+    (None, node)
 }
 
 fn to_latex(node: &Node) -> String {
@@ -303,15 +289,17 @@ fn to_latex(node: &Node) -> String {
                 to_latex(&args[1]),
                 to_latex(&args[0])
             ),
-            "Selector" if args.len() == 1 => format!("S_{{{}}}", to_latex(&args[0])),
+            // A bare selector that survived (e.g. nested inside a gadget
+            // gate body): render it as q_n.
+            "Selector" => match selector_index(node) {
+                Some(i) => format!("q_{{{}}}", i),
+                None => "q".to_string(),
+            },
             "Rotation" if args.len() == 1 => to_latex(&args[0]),
             _ => format!(
                 "\\mathsf{{{}}}({})",
                 name,
-                args.iter()
-                    .map(to_latex)
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                args.iter().map(to_latex).collect::<Vec<_>>().join(", ")
             ),
         },
         Node::Struct(name, fields) => match name.as_str() {
@@ -340,10 +328,78 @@ fn to_latex(node: &Node) -> String {
     }
 }
 
+/// A parsed gate: source-level name, per-constraint labels, polynomials.
+struct Gate {
+    name: String,
+    constraint_names: Vec<String>,
+    polys: Vec<Node>,
+}
+
+fn parse_gate(node: &Node) -> Gate {
+    let Node::Struct(sname, fields) = node else {
+        panic!("expected Gate struct, got {:?}", node);
+    };
+    assert_eq!(sname, "Gate", "expected a Gate struct");
+    let name = match field(fields, "name") {
+        Some(Node::Str(s)) => s.clone(),
+        _ => "(unnamed)".to_string(),
+    };
+    let constraint_names = match field(fields, "constraint_names") {
+        Some(Node::Array(items)) => items
+            .iter()
+            .map(|n| match n {
+                Node::Str(s) => s.clone(),
+                _ => String::new(),
+            })
+            .collect(),
+        _ => vec![],
+    };
+    let polys = match field(fields, "polys") {
+        Some(Node::Array(items)) => items.clone(),
+        _ => vec![],
+    };
+    Gate {
+        name,
+        constraint_names,
+        polys,
+    }
+}
+
+/// Map a source-level gate name to the chip that defines it. Attribution
+/// is by the chip that owns the gate: in-crate gates name a file in this
+/// repository, gadget gates name `halo2_gadgets`. The classifier is
+/// name-based and conservative; an unrecognised name falls back to the
+/// generic `halo2_gadgets` bucket.
+fn chip_of(name: &str) -> &'static str {
+    match name {
+        "Orchard circuit checks" => "Action (src/circuit.rs)",
+        "Field element addition: c = a + b" => "AddChip (src/circuit/gadget/add_chip.rs)",
+        "CommitIvk canonicity check" => "CommitIvkChip (src/circuit/commit_ivk.rs)",
+        n if n.starts_with("NoteCommit") || n == "y coordinate checks" => {
+            "NoteCommitChip (src/circuit/note_commit.rs)"
+        }
+        "full round" | "partial rounds" | "pad-and-add" => "PoseidonChip (halo2_gadgets)",
+        "Sinsemilla gate" | "Initial y_Q" => "SinsemillaChip (halo2_gadgets)",
+        "a' = b ⋅ swap + a ⋅ (1-swap)" | "Decomposition check" => "MerkleChip (halo2_gadgets)",
+        _ => "EccChip / utilities (halo2_gadgets)",
+    }
+}
+
+fn front_matter() {
+    println!("---");
+    println!("sidebar_position: 21");
+    println!("title: \"Appendix: Action Circuit Gate Constraints\"");
+    println!(
+        "description: Every gate of the Orchard Action circuit, grouped by \
+         source-level create_gate, with named constraints and KaTeX polynomials."
+    );
+    println!("---");
+    println!();
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let default_input =
-        "../../data/orchard-0.13.1-circuit_description.txt".to_string();
+    let default_input = "../../data/orchard-action-constraint-system.txt".to_string();
     let in_path = args.get(1).unwrap_or(&default_input);
     let input = match fs::read_to_string(in_path) {
         Ok(s) => s,
@@ -352,127 +408,115 @@ fn main() {
             process::exit(1);
         }
     };
-    let gates = extract_gates(&input);
 
-    println!("---");
-    println!("sidebar_position: 21");
-    println!("title: \"Appendix: Action Circuit Polynomial Constraints\"");
-    println!(
-        "description: Auto-generated KaTeX rendering of every gate \
-         polynomial in the Orchard 0.13.1 Action circuit verifier key."
-    );
-    println!("---");
-    println!();
-    println!("# Appendix: Action Circuit Polynomial Constraints");
+    let gates: Vec<Gate> = extract_gates(&input).iter().map(parse_gate).collect();
+    let total_polys: usize = gates.iter().map(|g| g.polys.len()).sum();
+
+    front_matter();
+    println!("# Appendix: Action Circuit Gate Constraints");
     println!();
     println!(
-        "This appendix lists the {} polynomial constraints of the",
-        gates.len()
+        "This appendix lists every gate of the Orchard Action circuit: {} \
+         source-level gates holding {} polynomial constraints in total. Each",
+        gates.len(),
+        total_polys
     );
-    println!("Orchard Action circuit at orchard 0.13.1. Each polynomial $P$");
-    println!("vanishes on every valid assignment: $P = 0$.");
+    println!("polynomial $P$ vanishes on every valid assignment: $P = 0$.");
     println!();
-    println!("**Provenance.** The polynomials are extracted from the");
-    println!("[`src/circuit_description`](https://github.com/zcash/orchard/blob/f8915bc5c8d1c9fa3124ad28bcf73ce232ef3669/src/circuit_description)");
-    println!("dump (a serialisation of");
-    println!("`halo2_proofs::plonk::PinnedVerificationKey`) by the");
-    println!("[`gates-to-latex`](https://github.com/dannywillems/orchard/tree/onboarding/onboarding/tools/gates-to-latex)");
-    println!("tool that ships in this repo. To regenerate after an upstream");
-    println!("change, run `make appendix-gates` from the `onboarding/`");
-    println!("directory; the tool re-reads the vendored copy at");
-    println!("`onboarding/data/orchard-0.13.1-circuit_description.txt`.");
+    println!("**Provenance.** The gates are read from the `Debug` rendering of");
+    println!("the freshly configured (pre-`compress_selectors`)");
+    println!("`halo2_proofs::plonk::ConstraintSystem`, emitted by the");
+    println!("`dump_action_constraint_system` test in the orchard crate and");
+    println!("vendored at");
+    println!("`onboarding/data/orchard-action-constraint-system.txt`. Unlike the");
+    println!("pinned verifying key, this rendering keeps every");
+    println!("`meta.create_gate(...)` name, the per-constraint labels passed to");
+    println!("`Constraints::with_selector`, and the original polynomials before");
+    println!("Halo 2's selector-compression pass rewrites them. To regenerate");
+    println!("after a circuit change, run `make appendix-gates` from the");
+    println!("`onboarding/` directory.");
     println!();
-    println!("**Notation.** The advice, fixed, and instance columns are");
-    println!("indexed by their `column_index` in the constraint system:");
+    println!("**Why this shape.** Grouping by source-level gate (rather than by");
+    println!("the compressed fixed column of the verifying key) keeps the doc");
+    println!("next to the code: each gate below is one `create_gate` call, each");
+    println!("named constraint is one proof obligation, and the polynomial is the");
+    println!("exact expression to formalise. This is the obligation list for");
+    println!("verifying the gates one at a time.");
+    println!();
+    println!("**Notation.**");
     println!();
     println!("- $A_c$, $A_c^{{(+r)}}$, $A_c^{{(-r)}}$: advice column $c$ at the");
     println!("  current row, rotated by $+r$ or $-r$.");
-    println!("- $F_c$, $F_c^{{(+r)}}$, $F_c^{{(-r)}}$: fixed column $c$ at the");
-    println!("  current row or a rotation. The pinned circuit uses 29 fixed");
-    println!("  columns; the lowest indices are the selector-promotion");
-    println!("  columns produced by Halo 2's `compress_selectors` pass, and");
-    println!("  the higher indices carry the chip-level constants used by");
-    println!("  the ECC, Sinsemilla, and Poseidon chips.");
-    println!("- Constants are rendered in hex. Values below `0xffff` are");
-    println!("  shown in full; larger values are truncated to a six-hex-digit");
-    println!("  head followed by `\\ldots` to keep KaTeX expressions readable.");
-    println!();
-    println!("**Grouping.** Halo 2's `compress_selectors` pass packs every");
-    println!("`meta.create_gate(...)` group into a single shared fixed column");
-    println!("by giving the column a small integer value per gate member.");
-    println!("That value selects the member through an envelope of the form");
-    println!("$F_c \\cdot (k_1 - F_c) \\cdot \\dots \\cdot (k_n - F_c)$. Two");
-    println!("polynomials that share the same envelope column $c$ therefore");
-    println!("come from the same source-level `create_gate` call. We use $c$");
-    println!("as the group key and list polynomials per group; the");
-    println!("source-level chip that owns each group can be identified by");
-    println!("opening `src/circuit.rs` and reading the chip-configuration");
-    println!("calls in `Circuit::configure` in order. Polynomials that do");
-    println!("not match the envelope pattern are listed under \"Ungrouped\".");
-    println!();
-    println!("**Scope.** This is the raw polynomial form, not yet annotated");
-    println!("with chip-level meaning. Phase 2 of this work would attach a");
-    println!("source-level chip name to each group (ECC, Sinsemilla,");
-    println!("Poseidon, Merkle, CommitIvk, NoteCommit). Doing so cleanly");
-    println!("requires upstream changes in `halo2_proofs` to expose gate");
-    println!("names; the pinned dump deliberately strips them.");
+    println!("- $F_c$, $I_c$: fixed and instance column $c$ (with the same");
+    println!("  rotation notation).");
+    println!("- Each constraint is enforced only when the gate's selector is");
+    println!("  active. That selector factor is peeled off and shown as");
+    println!("  \"selector $q_n$\" in the heading, so the polynomial below is the");
+    println!("  constraint body alone.");
+    println!("- Constants are rendered in hex. Values below `0xffff` are shown in");
+    println!("  full; larger values are truncated to a six-hex-digit head");
+    println!("  followed by `\\ldots` to keep KaTeX readable.");
     println!();
 
-    // Collect (group_id, original_index, polynomial).
-    let mut groups: std::collections::BTreeMap<Option<i64>, Vec<(usize, &Node)>> =
-        std::collections::BTreeMap::new();
-    for (i, g) in gates.iter().enumerate() {
-        let key = split_envelope(g).map(|(c, _)| c);
-        groups.entry(key).or_default().push((i, g));
-    }
-
+    // Summary table.
     println!("## Summary");
     println!();
-    println!("| Envelope column $c$ | Polynomials in group | Original indices                   |");
-    println!("| ------------------- | -------------------- | ---------------------------------- |");
-    for (k, v) in &groups {
-        let key_str = match k {
-            Some(c) => format!("$F_{{{}}}$", c),
-            None => "ungrouped".to_string(),
-        };
-        let indices = v
-            .iter()
-            .map(|(i, _)| (i + 1).to_string())
-            .collect::<Vec<_>>()
-            .join(", ");
-        let indices = if indices.len() > 60 {
-            format!("{}\\,...", &indices[..60])
-        } else {
-            indices
-        };
-        println!("| {} | {} | {} |", key_str, v.len(), indices);
+    println!("| # | Gate | Constraints | Source |");
+    println!("| - | ---- | ----------- | ------ |");
+    for (i, g) in gates.iter().enumerate() {
+        println!(
+            "| {} | `{}` | {} | {} |",
+            i + 1,
+            g.name,
+            g.polys.len(),
+            chip_of(&g.name)
+        );
     }
     println!();
 
-    let mut group_no = 0;
-    for (k, v) in &groups {
-        group_no += 1;
-        let header = match k {
-            Some(c) => format!(
-                "## Group {} (envelope column $F_{{{}}}$, {} polynomials)",
-                group_no,
-                c,
-                v.len()
-            ),
-            None => format!(
-                "## Group {} (ungrouped, {} polynomials)",
-                group_no,
-                v.len()
-            ),
-        };
-        println!("{}", header);
+    // Group gates by owning chip for a short index.
+    let mut by_chip: BTreeMap<&str, Vec<usize>> = BTreeMap::new();
+    for (i, g) in gates.iter().enumerate() {
+        by_chip.entry(chip_of(&g.name)).or_default().push(i + 1);
+    }
+    println!("## Gates by chip");
+    println!();
+    for (chip, idxs) in &by_chip {
+        let list = idxs
+            .iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>()
+            .join(", ");
+        println!("- **{}**: gates {}", chip, list);
+    }
+    println!();
+
+    // One section per source-level gate. Gate names and constraint labels
+    // are wrapped in backticks: they are code-level identifiers and often
+    // contain `_` or `*`, which MDX would otherwise read as emphasis.
+    for (i, g) in gates.iter().enumerate() {
+        println!("## Gate {}. `{}`", i + 1, g.name);
         println!();
-        for (idx, gate) in v {
-            println!("### Polynomial {} (original index {})", idx + 1, idx + 1);
+        println!(
+            "_Source: {}. {} constraint{}._",
+            chip_of(&g.name),
+            g.polys.len(),
+            if g.polys.len() == 1 { "" } else { "s" }
+        );
+        println!();
+        for (j, poly) in g.polys.iter().enumerate() {
+            let label = g
+                .constraint_names
+                .get(j)
+                .filter(|s| !s.is_empty())
+                .cloned()
+                .unwrap_or_else(|| format!("constraint {}", j + 1));
+            let (sel, body) = split_selector(poly);
+            match sel {
+                Some(n) => println!("### `{}` (selector $q_{{{}}}$)", label, n),
+                None => println!("### `{}`", label),
+            }
             println!();
-            // Print the envelope-stripped body when we have one, so the
-            // selector clutter is moved out of the math block.
-            let body = split_envelope(gate).map(|(_, b)| b).unwrap_or(gate);
             println!("$$");
             println!("{} = 0", to_latex(body));
             println!("$$");

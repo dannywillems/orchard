@@ -28,11 +28,16 @@ format: ## Format markdown and TS files
 check-format: ## Check formatting
 	npx prettier --check "docs/**/*.{md,mdx}" "*.ts" "src/**/*.{ts,tsx,css}"
 
+.PHONY: appendix-gates-data
+appendix-gates-data: ## Regenerate the vendored Action constraint-system dump from the crate
+	(cd .. && ORCHARD_DUMP_CONSTRAINT_SYSTEM=1 \
+		cargo test --lib dump_action_constraint_system)
+
 .PHONY: appendix-gates
-appendix-gates: ## Regenerate docs/appendix-gates.md from the pinned circuit description
+appendix-gates: ## Regenerate docs/appendix-gates.md from the constraint-system dump
 	(cd tools/gates-to-latex && cargo build --release)
 	tools/gates-to-latex/target/release/gates-to-latex \
-		data/orchard-0.13.1-circuit_description.txt \
+		data/orchard-action-constraint-system.txt \
 		> docs/appendix-gates.md
 	npx prettier --write docs/appendix-gates.md
 

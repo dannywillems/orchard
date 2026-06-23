@@ -1109,6 +1109,32 @@ mod tests {
         value::{ValueCommitTrapdoor, ValueCommitment},
     };
 
+    // Regenerates the uncompressed Action constraint-system dump consumed by the
+    // onboarding appendix generator (`onboarding/tools/gates-to-latex`). Unlike
+    // the pinned verifying key (which `compress_selectors` strips of gate names),
+    // the `Debug` rendering of the freshly configured `ConstraintSystem` retains
+    // every `create_gate` name, its per-constraint labels, and the original
+    // (envelope-free) polynomials. Run with the env var set to refresh the
+    // vendored copy:
+    //   ORCHARD_DUMP_CONSTRAINT_SYSTEM=1 cargo test --lib dump_action_constraint_system
+    #[test]
+    fn dump_action_constraint_system() {
+        use halo2_proofs::plonk::ConstraintSystem;
+
+        if std::env::var_os("ORCHARD_DUMP_CONSTRAINT_SYSTEM").is_none() {
+            return;
+        }
+
+        let mut cs = ConstraintSystem::<pallas::Base>::default();
+        <Circuit as halo2_proofs::plonk::Circuit<pallas::Base>>::configure(&mut cs);
+
+        std::fs::write(
+            "onboarding/data/orchard-action-constraint-system.txt",
+            std::format!("{:#?}\n", cs),
+        )
+        .expect("should be able to write the constraint-system dump");
+    }
+
     fn generate_circuit_instance<R: RngCore>(
         mut rng: R,
         circuit_version: OrchardCircuitVersion,
